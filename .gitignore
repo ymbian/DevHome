@@ -1,0 +1,22 @@
+# Maven
+target/
+pom.xml.tag
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Platform H2 data
+platform/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

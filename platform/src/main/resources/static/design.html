@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>设计文档</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 1rem; }
+        h1 { font-size: 1.25rem; }
+        textarea { width: 100%; min-height: 320px; padding: 0.5rem; font-family: monospace; font-size: 0.9rem; resize: vertical; }
+        button { padding: 0.5rem 1rem; margin-right: 0.5rem; margin-top: 0.5rem; cursor: pointer; }
+        #msg { margin: 0.5rem 0; color: #333; }
+        a { color: #06c; }
+    </style>
+</head>
+<body>
+    <h1>设计文档</h1>
+    <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
+    <button id="generate">生成设计</button>
+    <button id="save">保存</button>
+    <button id="runOpenspec">运行 openspec</button>
+    <div id="msg"></div>
+    <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
+    <div id="codingGuide" style="margin-top:1rem; padding:0.75rem; background:#e8f5e9; border-radius:4px; display:none;"></div>
+    <script>
+        const id = (new URLSearchParams(location.search)).get('id');
+        if (!id) { document.getElementById('msg').textContent = '缺少参数 id'; document.getElementById('design').disabled = true; }
+        else {
+            document.getElementById('instanceId').textContent = '实例: ' + id;
+            fetch('/api/instances/' + id + '/design').then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+                document.getElementById('design').value = d.content || '';
+            }).catch(() => { document.getElementById('msg').textContent = '加载失败'; });
+
+            document.getElementById('generate').onclick = function () {
+                document.getElementById('msg').textContent = '生成中...';
+                fetch('/api/instances/' + id + '/design/generate', { method: 'POST' })
+                    .then(r => r.ok ? r.json() : Promise.reject())
+                    .then(d => { document.getElementById('design').value = d.content || ''; document.getElementById('msg').textContent = '已生成'; })
+                    .catch(() => { document.getElementById('msg').textContent = '生成失败'; });
+            };
+            document.getElementById('save').onclick = function () {
+                document.getElementById('msg').textContent = '保存中...';
+                fetch('/api/instances/' + id + '/design', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: document.getElementById('design').value })
+                }).then(r => r.ok ? (document.getElementById('msg').textContent = '已保存') : Promise.reject()).catch(() => { document.getElementById('msg').textContent = '保存失败'; });
+            };
+            fetch('/api/instances/' + id + '/coding-guide').then(r => r.ok ? r.json() : {}).then(d => {
+                if (d.ready) {
+                    var el = document.getElementById('codingGuide');
+                    el.style.display = 'block';
+                    el.innerHTML = '<strong>编码就绪</strong>: ' + d.message + (d.tasksPath ? ' <br>tasks: <code>' + d.tasksPath + '</code>' : '');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

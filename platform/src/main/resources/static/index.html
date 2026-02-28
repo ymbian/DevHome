@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>需求到编码 · 平台</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 1rem; }
+        h1 { font-size: 1.25rem; }
+        textarea { width: 100%; min-height: 120px; padding: 0.5rem; resize: vertical; }
+        button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
+        #status { margin: 1rem 0; padding: 0.5rem; background: #f0f0f0; border-radius: 4px; font-size: 0.9rem; }
+        .list { margin-top: 1.5rem; }
+        .item { border: 1px solid #ddd; border-radius: 4px; padding: 0.75rem; margin-bottom: 0.5rem; }
+        .item small { color: #666; }
+        .item a { margin-left: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>需求描述</h1>
+    <p>输入自然语言需求，提交后将生成设计文档并驱动 openspec / Cursor 流水线。</p>
+    <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
+    <br>
+    <button id="submit">提交</button>
+    <div id="message"></div>
+    <div id="status"></div>
+    <div class="list">
+        <h2>历史</h2>
+        <div id="history"></div>
+    </div>
+    <script>
+        const api = '/api';
+        function showStatus() {
+            fetch(api + '/status').then(r => r.json()).then(d => {
+                const s = document.getElementById('status');
+                s.innerHTML = 'openspec: ' + (d.openspecAvailable ? '✓ ' + (d.openspecVersion || '') : '✗ 未安装') +
+                    ' · 工作目录: ' + (d.openspecWorkDir || '.');
+            }).catch(() => { document.getElementById('status').innerHTML = '状态获取失败'; });
+        }
+        showStatus();
+        setInterval(showStatus, 30000);
+
+        document.getElementById('submit').onclick = function () {
+            const text = document.getElementById('requirement').value.trim();
+            if (!text) { document.getElementById('message').textContent = '请输入需求描述'; return; }
+            document.getElementById('message').textContent = '提交中...';
+            fetch(api + '/requirements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+                document.getElementById('message').textContent = '已创建流水线: ' + d.id;
+                document.getElementById('requirement').value = '';
+                loadHistory();
+            }).catch(() => { document.getElementById('message').textContent = '提交失败'; });
+        };
+
+        function loadHistory() {
+            fetch(api + '/requirements').then(r => r.json()).then(list => {
+                const el = document.getElementById('history');
+                if (!list.length) { el.innerHTML = '<p>暂无记录</p>'; return; }
+                el.innerHTML = list.map(i => '<div class="item">' +
+                    '<strong>' + i.id + '</strong> <small>' + i.createdAt + ' · ' + i.status + '</small>' +
+                    '<br><span>' + escapeHtml(i.excerpt) + '</span>' +
+                    ' <a href="#" data-id="' + i.id + '">查看</a> <a href="/design.html?id=' + encodeURIComponent(i.id) + '">设计</a>' +
+                    '</div>').join('');
+                el.querySelectorAll('a[data-id]').forEach(a => {
+                    a.onclick = function (e) { e.preventDefault(); viewRequirement(this.dataset.id); };
+                });
+            });
+        }
+        function viewRequirement(id) {
+            fetch(api + '/requirements/' + id).then(r => r.json()).then(d => {
+                document.getElementById('requirement').value = d.text;
+                document.getElementById('message').textContent = '已加载: ' + d.id + ' (可编辑后重新提交为新实例)';
+            });
+        }
+        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        loadHistory();
+    </script>
+</body>
+</html>
