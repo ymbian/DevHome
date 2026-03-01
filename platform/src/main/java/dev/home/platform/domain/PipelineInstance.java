@@ -18,7 +18,8 @@ public class PipelineInstance {
     @Column(nullable = false, length = 64, unique = true)
     private String instanceId;
 
-    @Column(nullable = false, columnDefinition = "CLOB")
+    @Lob
+    @Column(nullable = false)
     private String requirementText;
 
     @Column(nullable = false)
@@ -41,7 +42,7 @@ public class PipelineInstance {
     private String changePath;
 
     /** Generated design document content (Markdown) */
-    @Column(columnDefinition = "CLOB")
+    @Lob
     private String designContent;
 
     @PrePersist

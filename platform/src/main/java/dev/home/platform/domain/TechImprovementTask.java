@@ -21,7 +21,7 @@ public class TechImprovementTask {
     @Column(nullable = false, length = 512)
     private String title;
 
-    @Column(columnDefinition = "CLOB")
+    @Lob
     private String description;
 
     @Column(length = 16)
