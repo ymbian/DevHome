@@ -1,10 +1,12 @@
 package dev.home.platform.web;
 
+import dev.home.platform.domain.PipelineInstance;
 import dev.home.platform.domain.PipelineInstanceRepository;
 import dev.home.platform.service.OpenspecService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -26,17 +28,20 @@ public class OpenspecController {
                     try {
                         String changePath = openspecService.runOpenspec(id);
                         PipelineInstance updated = repository.findByInstanceId(id).orElse(p);
-                        return ResponseEntity.ok(Map.of(
-                                "changeName", updated.getChangeName() != null ? updated.getChangeName() : "",
-                                "changePath", changePath));
+                        Map<String, String> body = new HashMap<>();
+                        body.put("changeName", updated.getChangeName() != null ? updated.getChangeName() : "");
+                        body.put("changePath", changePath);
+                        return ResponseEntity.ok(body);
                     } catch (Exception e) {
                         repository.findByInstanceId(id).ifPresent(inst -> {
                             inst.setStatus("FAILED");
                             repository.save(inst);
                         });
-                        return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+                        Map<String, String> err = new HashMap<>();
+                        err.put("error", e.getMessage());
+                        return ResponseEntity.status(500).body(err);
                     }
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> (ResponseEntity<Map<String, String>>) (ResponseEntity<?>) ResponseEntity.notFound().build());
     }
 }
