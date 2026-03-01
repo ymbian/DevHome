@@ -3,6 +3,7 @@ package dev.home.platform.web;
 import dev.home.platform.domain.PipelineInstance;
 import dev.home.platform.domain.PipelineInstanceRepository;
 import dev.home.platform.service.DesignGenerationService;
+import dev.home.platform.service.OpenspecService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,10 +30,14 @@ public class DesignController {
 
     private final PipelineInstanceRepository repository;
     private final DesignGenerationService designService;
+    private final OpenspecService openspecService;
 
-    public DesignController(PipelineInstanceRepository repository, DesignGenerationService designService) {
+    public DesignController(PipelineInstanceRepository repository,
+                            DesignGenerationService designService,
+                            OpenspecService openspecService) {
         this.repository = repository;
         this.designService = designService;
+        this.openspecService = openspecService;
     }
 
     @GetMapping("/design")
@@ -57,12 +62,22 @@ public class DesignController {
     }
 
     @PostMapping("/design/generate")
-    public ResponseEntity<Map<String, String>> generateDesign(@PathVariable String id) {
+    public ResponseEntity<Map<String, String>> generateDesign(@PathVariable String id,
+                                                              @RequestParam(name = "specMode", required = false, defaultValue = "false") boolean specMode) {
         return repository.findByInstanceId(id)
                 .map(p -> {
                     try {
                         String content = designService.generate(id);
-                        return ResponseEntity.ok(Collections.singletonMap("content", content));
+                        Map<String, String> body = new HashMap<>();
+                        body.put("content", content);
+                        if (specMode) {
+                            String changePath = openspecService.runOpenspec(id);
+                            body.put("specGenerated", "true");
+                            body.put("changePath", changePath != null ? changePath : "");
+                        } else {
+                            body.put("specGenerated", "false");
+                        }
+                        return ResponseEntity.ok(body);
                     } catch (IllegalArgumentException e) {
                         return notFoundMap();
                     } catch (Exception e) {

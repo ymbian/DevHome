@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Exposes "coding ready" status and task/context summary for Cursor (e.g. /opsx:apply).
+ * Exposes "coding ready" status and task/context summary for IDE (e.g. /opsx:apply).
  */
 @RestController
 @RequestMapping("/api/instances/{id}")
@@ -33,8 +33,8 @@ public class CodingGuideController {
                     body.put("changeName", p.getChangeName() != null ? p.getChangeName() : "");
                     body.put("changePath", p.getChangePath() != null ? p.getChangePath() : "");
                     body.put("message", ready
-                            ? "在 Cursor 中运行 /opsx:apply 或指定变更名: " + p.getChangeName()
-                            : "请先完成「生成设计」与「运行 openspec」步骤");
+                            ? "在 IDE 中运行 /opsx:apply 或指定变更名: " + p.getChangeName()
+                            : "请先完成「生成设计」，若需生成spec文件请开启spec模式");
                     body.put("tasksPath", p.getChangePath() != null ? p.getChangePath() + "/tasks.md" : "");
                     return ResponseEntity.ok(body);
                 })

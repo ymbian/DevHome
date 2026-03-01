@@ -9,6 +9,42 @@
         textarea#design { min-height: 320px; font-family: monospace; font-size: 0.9rem; }
         #msg { margin: 0.5rem 0; color: var(--color-text); }
         #codingGuide { margin-top: 1rem; padding: 0.75rem; background: #e8f5e9; border-radius: 6px; display: none; }
+        .spec-switch { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: 0.75rem; font-size: 0.95rem; vertical-align: middle; }
+        .spec-switch .spec-toggle {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 42px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid #c7d2fe;
+            background: #dbeafe;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .spec-switch .spec-toggle::before {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+        .spec-switch .spec-toggle:checked {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+        .spec-switch .spec-toggle:checked::before {
+            transform: translateX(18px);
+        }
+        .spec-switch .spec-toggle:focus-visible {
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+        }
     </style>
 </head>
 <body>
@@ -24,7 +60,7 @@
         <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
         <button id="generate" class="btn">生成设计</button>
         <button id="save" class="btn">保存</button>
-        <button id="runOpenspec" class="btn">运行 openspec</button>
+        <label class="spec-switch"><input type="checkbox" id="specMode" class="spec-toggle"> spec模式</label>
         <div id="msg"></div>
         <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
         <div id="codingGuide"></div>
@@ -41,9 +77,24 @@
 
             document.getElementById('generate').onclick = function () {
                 document.getElementById('msg').textContent = '生成中...';
-                fetch('/api/instances/' + id + '/design/generate', { method: 'POST' })
+                var specModeEnabled = document.getElementById('specMode').checked;
+                var url = '/api/instances/' + id + '/design/generate?specMode=' + (specModeEnabled ? 'true' : 'false');
+                fetch(url, { method: 'POST' })
                     .then(r => r.ok ? r.json() : Promise.reject())
-                    .then(d => { document.getElementById('design').value = d.content || ''; document.getElementById('msg').textContent = '已生成'; })
+                    .then(d => {
+                        document.getElementById('design').value = d.content || '';
+                        if (!specModeEnabled) {
+                            document.getElementById('msg').textContent = '已生成（spec模式关闭，未生成spec文件）';
+                            return null;
+                        }
+                        if (d.specGenerated === 'true') {
+                            document.getElementById('msg').textContent = '已生成（spec文件已生成）';
+                            location.reload();
+                            return null;
+                        }
+                        document.getElementById('msg').textContent = '设计已生成，但spec文件未生成';
+                        return null;
+                    })
                     .catch(() => { document.getElementById('msg').textContent = '生成失败'; });
             };
             document.getElementById('save').onclick = function () {
@@ -53,13 +104,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: document.getElementById('design').value })
                 }).then(r => r.ok ? (document.getElementById('msg').textContent = '已保存') : Promise.reject()).catch(() => { document.getElementById('msg').textContent = '保存失败'; });
-            };
-            document.getElementById('runOpenspec').onclick = function () {
-                document.getElementById('msg').textContent = '运行 openspec 中...';
-                fetch('/api/instances/' + id + '/openspec/run', { method: 'POST' })
-                    .then(r => r.ok ? r.json() : Promise.reject())
-                    .then(() => { document.getElementById('msg').textContent = 'openspec 已运行'; location.reload(); })
-                    .catch(() => { document.getElementById('msg').textContent = '运行失败'; });
             };
             fetch('/api/instances/' + id + '/coding-guide').then(r => r.ok ? r.json() : {}).then(d => {
                 if (d.ready) {
