@@ -6,16 +6,16 @@
     <title>技改任务 · 平台</title>
     <link rel="stylesheet" href="/common.css">
     <style>
-        .filter { margin: 0.5rem 0; }
-        .filter select { margin-right: 0.5rem; }
+        .type-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; margin: 0.5rem 0; }
+        .type-tabs .tab { padding: 0.4rem 0.75rem; font-size: 0.9rem; border: none; border-radius: 6px; background: #f0f2f5; color: var(--color-text); cursor: pointer; text-decoration: none; }
+        .type-tabs .tab:hover { background: #e5e7eb; }
+        .type-tabs .tab.active { background: var(--color-primary); color: #fff; }
+        .type-tabs .tab-refresh { margin-left: auto; }
         #message, #result { margin: 0.75rem 0; padding: 0.5rem; border-radius: 6px; font-size: 0.9rem; }
         #result.success { background: #e8f5e9; }
         #result.error { background: #ffebee; }
         .item { display: flex; align-items: flex-start; gap: 0.5rem; }
-        .item input[type="checkbox"] { margin-top: 0.25rem; }
         .item .body { flex: 1; }
-        .add-task { margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; }
-        .add-task strong { display: block; margin-bottom: 0.5rem; }
     </style>
 </head>
 <body>
@@ -27,24 +27,11 @@
     </aside>
     <main class="app-main">
         <h1>技改任务</h1>
-        <p>按类型筛选、多选后点击「处理」将创建流水线并生成设计、运行 openspec，可跳转至设计页。</p>
-        <div class="filter">
-            <label>类型：</label>
-            <select id="typeFilter">
-                <option value="">全部</option>
-            </select>
-            <button id="refresh" class="btn">刷新</button>
+        <p>按类型筛选查看任务列表。</p>
+        <div class="type-tabs" id="typeTabs">
+            <button type="button" class="tab active" data-type="" aria-pressed="true">全部</button>
+            <button type="button" class="btn tab-refresh" id="refresh">刷新</button>
         </div>
-        <div class="add-task">
-            <strong>新增任务</strong>
-            <div style="margin-top:0.5rem;">
-                <select id="newType" style="margin-right:0.5rem;"></select>
-                <input type="text" id="newTitle" placeholder="标题" style="width:200px; margin-right:0.5rem;">
-                <input type="text" id="newDesc" placeholder="描述（可选）" style="width:240px; margin-right:0.5rem;">
-                <button id="addTask" class="btn">添加</button>
-            </div>
-        </div>
-        <button id="dispatch" class="btn" disabled>处理选中</button>
         <div id="message"></div>
         <div id="result"></div>
         <div class="list">
@@ -55,95 +42,60 @@
     <script src="/shell.js"></script>
     <script>
         const api = '/api/tech-improvement';
-        const typeFilter = document.getElementById('typeFilter');
+        var selectedType = '';
+        const typeTabsEl = document.getElementById('typeTabs');
         const taskList = document.getElementById('taskList');
-        const dispatchBtn = document.getElementById('dispatch');
         const messageEl = document.getElementById('message');
         const resultEl = document.getElementById('result');
 
         function loadTypes() {
             fetch(api + '/tasks/types').then(r => r.json()).then(types => {
-                typeFilter.innerHTML = '<option value="">全部</option>' +
-                    types.map(t => '<option value="' + t.value + '">' + (t.label || t.value) + '</option>').join('');
-                var newType = document.getElementById('newType');
-                newType.innerHTML = types.map(t => '<option value="' + t.value + '">' + (t.label || t.value) + '</option>').join('');
+                var html = '<button type="button" class="tab active" data-type="">全部</button>';
+                types.forEach(function (t) {
+                    html += '<button type="button" class="tab" data-type="' + escapeHtml(t.value) + '">' + escapeHtml(t.label || t.value) + '</button>';
+                });
+                html += '<button type="button" class="btn tab-refresh" id="refresh">刷新</button>';
+                typeTabsEl.innerHTML = html;
+                typeTabsEl.querySelectorAll('.tab').forEach(function (tab) {
+                    tab.addEventListener('click', function () { setType(tab.getAttribute('data-type') || ''); });
+                });
+                document.getElementById('refresh').onclick = loadTasks;
+                setType('');
             });
         }
+        function setType(type) {
+            selectedType = type;
+            typeTabsEl.querySelectorAll('.tab').forEach(function (tab) {
+                var isActive = (tab.getAttribute('data-type') || '') === (type || '');
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+            loadTasks();
+        }
         function loadTasks() {
-            const type = typeFilter.value;
-            const url = type ? api + '/tasks?type=' + encodeURIComponent(type) : api + '/tasks';
+            const url = selectedType ? api + '/tasks?type=' + encodeURIComponent(selectedType) : api + '/tasks';
             fetch(url).then(r => r.json()).then(list => {
                 if (!list.length) { taskList.innerHTML = '<p>暂无任务</p>'; return; }
-                taskList.innerHTML = list.map(t => '<div class="item">' +
-                    '<input type="checkbox" class="task-cb" data-id="' + t.id + '" data-title="' + escapeAttr(t.title) + '">' +
-                    '<div class="body">' +
-                    '<strong>' + escapeHtml(t.title) + '</strong>' +
-                    ' <span class="meta">' + (t.typeLabel || t.type) + ' · ' + (t.priority || '') + ' · ' + (t.status || '') + '</span>' +
-                    (t.description ? '<div class="meta">' + escapeHtml(t.description.substring(0, 120)) + (t.description.length > 120 ? '…' : '') + '</div>' : '') +
-                    (t.pipelineInstanceId ? ' <a href="/design.html?id=' + encodeURIComponent(t.pipelineInstanceId) + '">查看设计</a>' : '') +
-                    '</div></div>').join('');
-                updateDispatchButton();
-                taskList.querySelectorAll('.task-cb').forEach(cb => cb.addEventListener('change', updateDispatchButton));
+                taskList.innerHTML = list.map(t => {
+                    var appName = t.applicationName != null ? t.applicationName : t.title;
+                    var issueDesc = t.issueDescription != null ? t.issueDescription : t.description;
+                    var deadlineStr = t.deadline ? ' · 截止: ' + t.deadline : '';
+                    var meta = (t.typeLabel || t.type) + (t.priority ? ' · ' + t.priority : '') + (t.status ? ' · ' + t.status : '') + deadlineStr;
+                    var descPreview = issueDesc ? escapeHtml(issueDesc.substring(0, 120)) + (issueDesc.length > 120 ? '…' : '') : '';
+                    return '<div class="item">' +
+                        '<div class="body">' +
+                        '<strong>' + escapeHtml(appName) + '</strong>' +
+                        ' <span class="meta">' + meta + '</span>' +
+                        (descPreview ? '<div class="meta">' + descPreview + '</div>' : '') +
+                        (t.pipelineInstanceId ? ' <a href="/design.html?id=' + encodeURIComponent(t.pipelineInstanceId) + '">查看设计</a>' : '') +
+                        '</div></div>';
+                }).join('');
             }).catch(() => { taskList.innerHTML = '<p>加载失败</p>'; });
-        }
-        function updateDispatchButton() {
-            const checked = taskList.querySelectorAll('.task-cb:checked');
-            dispatchBtn.disabled = !checked.length;
         }
         function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
         function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
 
-        document.getElementById('refresh').onclick = loadTasks;
-        typeFilter.addEventListener('change', loadTasks);
-
-        document.getElementById('addTask').onclick = function () {
-            var title = document.getElementById('newTitle').value.trim();
-            if (!title) { messageEl.textContent = '请输入标题'; return; }
-            messageEl.textContent = '添加中...';
-            var type = document.getElementById('newType').value;
-            var desc = document.getElementById('newDesc').value.trim();
-            fetch(api + '/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: type || 'OTHER', title: title, description: desc })
-            }).then(r => r.ok ? r.json() : Promise.reject()).then(function () {
-                document.getElementById('newTitle').value = '';
-                document.getElementById('newDesc').value = '';
-                messageEl.textContent = '已添加';
-                loadTasks();
-            }).catch(function () { messageEl.textContent = '添加失败'; });
-        };
-
-        dispatchBtn.onclick = function () {
-            const ids = Array.from(taskList.querySelectorAll('.task-cb:checked')).map(cb => Number(cb.dataset.id));
-            if (!ids.length) return;
-            messageEl.textContent = '派发中...';
-            resultEl.innerHTML = '';
-            resultEl.className = '';
-            fetch(api + '/dispatch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ taskIds: ids })
-            }).then(r => r.ok ? r.json() : Promise.reject()).then(results => {
-                messageEl.textContent = '';
-                const success = results.filter(r => r.success);
-                const fail = results.filter(r => !r.success);
-                if (success.length) {
-                    resultEl.className = 'success';
-                    resultEl.innerHTML = '成功 ' + success.length + ' 条：<br>' +
-                        success.map(r => '<a href="/design.html?id=' + encodeURIComponent(r.instanceId) + '">' + escapeHtml(r.instanceId) + '</a>').join(', ');
-                }
-                if (fail.length) {
-                    resultEl.className = resultEl.innerHTML ? 'error' : 'error';
-                    resultEl.innerHTML += (resultEl.innerHTML ? '<br>' : '') + '失败 ' + fail.length + ' 条：' +
-                        fail.map(r => '任务 ' + r.taskId + ': ' + escapeHtml(r.error || '未知错误')).join('；');
-                }
-                loadTasks();
-            }).catch(() => { messageEl.textContent = '派发请求失败'; resultEl.className = 'error'; resultEl.textContent = '请重试'; });
-        };
-
         loadTypes();
-        loadTasks();
     </script>
 </body>
 </html>

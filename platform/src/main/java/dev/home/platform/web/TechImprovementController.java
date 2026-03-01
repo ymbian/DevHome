@@ -4,6 +4,7 @@ import dev.home.platform.domain.TechImprovementTask;
 import dev.home.platform.domain.TechImprovementTaskRepository;
 import dev.home.platform.domain.TechImprovementType;
 import dev.home.platform.service.TechDispatchService;
+import dev.home.platform.service.TechImprovementTaskMysqlService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -22,11 +24,14 @@ public class TechImprovementController {
 
     private final TechImprovementTaskRepository repository;
     private final TechDispatchService dispatchService;
+    private final Optional<TechImprovementTaskMysqlService> mysqlService;
 
     public TechImprovementController(TechImprovementTaskRepository repository,
-                                     TechDispatchService dispatchService) {
+                                     TechDispatchService dispatchService,
+                                     Optional<TechImprovementTaskMysqlService> mysqlService) {
         this.repository = repository;
         this.dispatchService = dispatchService;
+        this.mysqlService = mysqlService;
     }
 
     @GetMapping("/tasks")
@@ -34,6 +39,17 @@ public class TechImprovementController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
+        if (mysqlService.isPresent()) {
+            List<TechImprovementTaskMysqlService.TechTaskRowDto> rows;
+            if (type != null && !type.trim().isEmpty()) {
+                TechImprovementType t = parseType(type);
+                rows = t != null ? mysqlService.get().listByType(t) : mysqlService.get().listAll();
+            } else {
+                rows = mysqlService.get().listAll();
+            }
+            List<TaskDto> body = rows.stream().map(this::fromMysqlRow).collect(Collectors.toList());
+            return ResponseEntity.ok(body);
+        }
         List<TechImprovementTask> list;
         if (page != null && size != null && page >= 0 && size > 0) {
             Pageable pageable = PageRequest.of(page, size);
@@ -137,10 +153,26 @@ public class TechImprovementController {
         d.setTypeLabel(t.getType() != null ? t.getType().getLabel() : "");
         d.setTitle(t.getTitle());
         d.setDescription(t.getDescription());
+        d.setApplicationName(t.getTitle());
+        d.setIssueDescription(t.getDescription());
+        d.setDeadline(null);
         d.setPriority(t.getPriority());
         d.setStatus(t.getStatus());
         d.setCreatedAt(t.getCreatedAt() != null ? t.getCreatedAt().toString() : "");
         d.setPipelineInstanceId(t.getPipelineInstanceId());
+        return d;
+    }
+
+    private TaskDto fromMysqlRow(TechImprovementTaskMysqlService.TechTaskRowDto r) {
+        TaskDto d = new TaskDto();
+        d.setId(r.getId());
+        d.setType(r.getType());
+        d.setTypeLabel(r.getTypeLabel());
+        d.setApplicationName(r.getApplicationName());
+        d.setIssueDescription(r.getIssueDescription());
+        d.setDeadline(r.getDeadline());
+        d.setTitle(r.getApplicationName());
+        d.setDescription(r.getIssueDescription());
         return d;
     }
 
@@ -163,6 +195,12 @@ public class TechImprovementController {
         private String status;
         private String createdAt;
         private String pipelineInstanceId;
+        /** 应用名 (MySQL per-type table or mapping from title) */
+        private String applicationName;
+        /** 整改问题描述 (MySQL or mapping from description) */
+        private String issueDescription;
+        /** 整改截止时间 (MySQL per-type table) */
+        private String deadline;
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         public String getType() { return type; }
@@ -181,6 +219,12 @@ public class TechImprovementController {
         public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
         public String getPipelineInstanceId() { return pipelineInstanceId; }
         public void setPipelineInstanceId(String pipelineInstanceId) { this.pipelineInstanceId = pipelineInstanceId; }
+        public String getApplicationName() { return applicationName; }
+        public void setApplicationName(String applicationName) { this.applicationName = applicationName; }
+        public String getIssueDescription() { return issueDescription; }
+        public void setIssueDescription(String issueDescription) { this.issueDescription = issueDescription; }
+        public String getDeadline() { return deadline; }
+        public void setDeadline(String deadline) { this.deadline = deadline; }
     }
 
     public static class TaskCreateRequest {
