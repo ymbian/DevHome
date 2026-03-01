@@ -13,6 +13,17 @@
 4. **编码就绪**: 制品就绪后展示「运行 /opsx:apply」及 change 名称、tasks 路径；提供任务与上下文 API 供 Cursor Agent 使用。
 5. **流水线**: 状态机（已录入 → 设计已生成 → 制品就绪 → 编码就绪），支持从某步重跑与失败重试。
 
+## 技改模块
+
+在「开发」流水线之外，提供**技改任务**入口，用于漏洞修复、组件升级、数据库规范/性能优化等专项任务：
+
+- **入口**: 首页与技改页顶部导航区分「开发」「技改」；技改页地址 `/tech.html`。
+- **技改类型**: 漏洞修复、组件版本升级、数据库规范整改、数据库性能优化、其他（见 `TechImprovementType` 枚举）。
+- **流程**: 在技改页查看任务列表 → 按类型筛选 → 多选任务 → 点击「处理」→ 平台为每条任务创建 pipeline、生成设计、运行 openspec，并关联 `pipelineInstanceId`；成功后可跳转至 `/design.html?id={instanceId}` 查看设计或继续编码。
+- **录入**: 通过 `POST /api/tech-improvement/tasks` 单条创建，或 `POST /api/tech-improvement/tasks/batch` 批量导入（body 为 `TaskCreateRequest` 数组）。
+
+技改派发在**服务层**直接调用 `DesignGenerationService`、`OpenspecService` 与 pipeline 创建逻辑，不依赖对自身发 HTTP 请求。
+
 ## 配置
 
 在 `src/main/resources/application.properties` 或环境变量中配置：
@@ -63,6 +74,15 @@
 - `POST /api/instances/{id}/openspec/run` — 创建/更新 openspec change 并写入制品
 - `GET /api/instances/{id}/coding-guide` — 编码就绪状态与指引
 - `GET /api/instances/{id}/context` — 任务与上下文（供 Cursor Agent）
+
+**技改模块 API**：
+
+- `GET /api/tech-improvement/tasks` — 技改任务列表（可选 `type`、`page`、`size`）
+- `GET /api/tech-improvement/tasks/types` — 技改类型枚举（value/label）
+- `POST /api/tech-improvement/tasks` — 创建单条任务
+- `POST /api/tech-improvement/tasks/batch` — 批量创建任务
+- `PATCH /api/tech-improvement/tasks/{id}` — 更新状态（body: `{ "status": "..." }`）
+- `POST /api/tech-improvement/dispatch` — 派发选中任务（body: `{ "taskIds": [1,2,...] }`），返回每条成功/失败及 `instanceId`
 
 ## 许可证
 

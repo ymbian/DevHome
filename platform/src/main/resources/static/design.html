@@ -47,6 +47,13 @@
                     body: JSON.stringify({ content: document.getElementById('design').value })
                 }).then(r => r.ok ? (document.getElementById('msg').textContent = '已保存') : Promise.reject()).catch(() => { document.getElementById('msg').textContent = '保存失败'; });
             };
+            document.getElementById('runOpenspec').onclick = function () {
+                document.getElementById('msg').textContent = '运行 openspec 中...';
+                fetch('/api/instances/' + id + '/openspec/run', { method: 'POST' })
+                    .then(r => r.ok ? r.json() : Promise.reject())
+                    .then(() => { document.getElementById('msg').textContent = 'openspec 已运行'; location.reload(); })
+                    .catch(() => { document.getElementById('msg').textContent = '运行失败'; });
+            };
             fetch('/api/instances/' + id + '/coding-guide').then(r => r.ok ? r.json() : {}).then(d => {
                 if (d.ready) {
                     var el = document.getElementById('codingGuide');
