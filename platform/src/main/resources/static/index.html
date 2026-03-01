@@ -4,32 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>需求到编码 · 平台</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 1rem; }
-        h1 { font-size: 1.25rem; }
-        textarea { width: 100%; min-height: 120px; padding: 0.5rem; resize: vertical; }
-        button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
-        #status { margin: 1rem 0; padding: 0.5rem; background: #f0f0f0; border-radius: 4px; font-size: 0.9rem; }
-        .list { margin-top: 1.5rem; }
-        .item { border: 1px solid #ddd; border-radius: 4px; padding: 0.75rem; margin-bottom: 0.5rem; }
-        .item small { color: #666; }
-        .item a { margin-left: 0.5rem; }
-    </style>
+    <link rel="stylesheet" href="/common.css">
 </head>
 <body>
-    <h1>需求描述</h1>
-    <p><a href="/">开发</a> <a href="/tech.html">技改</a></p>
-    <p>输入自然语言需求，提交后将生成设计文档并驱动 openspec / Cursor 流水线。</p>
-    <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
-    <br>
-    <button id="submit">提交</button>
-    <div id="message"></div>
-    <div id="status"></div>
-    <div class="list">
-        <h2>历史</h2>
-        <div id="history"></div>
-    </div>
+    <aside class="app-sidebar">
+        <nav>
+            <a href="/" data-nav="dev">开发</a>
+            <a href="/tech.html" data-nav="tech">技改</a>
+        </nav>
+    </aside>
+    <main class="app-main">
+        <h1>需求描述</h1>
+        <p>输入自然语言需求，提交后将生成设计文档并驱动 openspec / Cursor 流水线。</p>
+        <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
+        <br>
+        <button id="submit" class="btn">提交</button>
+        <div id="message"></div>
+        <div id="status"></div>
+        <div class="list">
+            <h2>历史</h2>
+            <div id="history"></div>
+        </div>
+    </main>
+    <script src="/shell.js"></script>
     <script>
         const api = '/api';
         function showStatus() {

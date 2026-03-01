@@ -4,25 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>设计文档</title>
+    <link rel="stylesheet" href="/common.css">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 1rem; }
-        h1 { font-size: 1.25rem; }
-        textarea { width: 100%; min-height: 320px; padding: 0.5rem; font-family: monospace; font-size: 0.9rem; resize: vertical; }
-        button { padding: 0.5rem 1rem; margin-right: 0.5rem; margin-top: 0.5rem; cursor: pointer; }
-        #msg { margin: 0.5rem 0; color: #333; }
-        a { color: #06c; }
+        textarea#design { min-height: 320px; font-family: monospace; font-size: 0.9rem; }
+        #msg { margin: 0.5rem 0; color: var(--color-text); }
+        #codingGuide { margin-top: 1rem; padding: 0.75rem; background: #e8f5e9; border-radius: 6px; display: none; }
     </style>
 </head>
 <body>
-    <h1>设计文档</h1>
-    <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
-    <button id="generate">生成设计</button>
-    <button id="save">保存</button>
-    <button id="runOpenspec">运行 openspec</button>
-    <div id="msg"></div>
-    <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
-    <div id="codingGuide" style="margin-top:1rem; padding:0.75rem; background:#e8f5e9; border-radius:4px; display:none;"></div>
+    <aside class="app-sidebar">
+        <nav>
+            <a href="/" data-nav="dev">开发</a>
+            <a href="/tech.html" data-nav="tech">技改</a>
+        </nav>
+    </aside>
+    <main class="app-main">
+        <h1>设计文档</h1>
+        <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
+        <button id="generate" class="btn">生成设计</button>
+        <button id="save" class="btn">保存</button>
+        <button id="runOpenspec" class="btn">运行 openspec</button>
+        <div id="msg"></div>
+        <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
+        <div id="codingGuide"></div>
+    </main>
+    <script src="/shell.js"></script>
     <script>
         const id = (new URLSearchParams(location.search)).get('id');
         if (!id) { document.getElementById('msg').textContent = '缺少参数 id'; document.getElementById('design').disabled = true; }
