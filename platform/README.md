@@ -3,7 +3,7 @@
 为软件公司提供从**需求描述**到**设计文档**、**openspec 规范**、再到 **Cursor 编码**的流水线平台。
 
 - **技术栈**: Java 8、Maven 3.9、Spring Boot 2.7.4
-- **运行**: 本地 Web 应用，前端静态页 + 后端 API，数据持久化到 H2 文件库
+- **运行**: 本地 Web 应用，前端静态页 + 后端 API，数据持久化到 **MySQL**（默认）；可选 profile `dev-h2` 使用 H2 做本地开发
 
 ## 功能概览
 
@@ -26,7 +26,21 @@
 
 ## 配置
 
-在 `src/main/resources/application.properties` 或环境变量中配置：
+### 数据源（MySQL / H2）
+
+- **默认：MySQL**  
+  在 `application.properties` 中配置（或使用环境变量）：
+  - `spring.datasource.url` — 例如 `jdbc:mysql://localhost:3306/devhome?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC`
+  - `spring.datasource.username` / `spring.datasource.password`
+  - 首次启动前请先创建数据库并执行 `src/main/resources/schema-mysql.sql` 建表；`spring.jpa.hibernate.ddl-auto=validate` 时不会自动建表。
+- **可选：本地无 MySQL 时使用 H2**  
+  激活 profile `dev-h2` 即可使用 H2 文件库作为主数据源：
+  ```bash
+  mvn spring-boot:run -Dspring-boot.run.profiles=dev-h2
+  ```
+  或设置环境变量 `SPRING_PROFILES_ACTIVE=dev-h2`。
+
+**平台与 LLM 等**（同上文件或环境变量）：
 
 | 配置项 | 说明 | 默认 |
 |--------|------|------|
@@ -42,13 +56,14 @@
 ## 本地运行
 
 1. 安装 [openspec CLI](https://openspec.dev) 并确保 `openspec` 在 PATH 中（启动时会在日志中检查）。
-2. 进入本模块目录，使用 **Maven 3.9** 编译并启动：
+2. **数据源**：默认使用 MySQL，请先创建数据库并执行 `src/main/resources/schema-mysql.sql`；若无 MySQL，可加参数 `-Dspring-boot.run.profiles=dev-h2` 使用 H2。
+3. 进入本模块目录，使用 **Maven 3.9** 编译并启动：
 
    ```bash
    mvn spring-boot:run
    ```
 
-3. 浏览器访问: http://localhost:8080
+4. 浏览器访问: http://localhost:8080
 
 流程建议：
 
