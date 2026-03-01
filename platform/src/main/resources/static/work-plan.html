@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>工作计划 · 平台</title>
+    <link rel="stylesheet" href="/common.css">
+    <style>
+        .work-plan-header { margin-bottom: 0.75rem; }
+        .work-plan-header h1 { margin-bottom: 0.25rem; }
+        .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.5rem 0 1rem; }
+        .legend .chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.85rem; background: #f3f4f6; }
+        .legend .chip.done { background: #e8f5e9; color: #1b5e20; }
+        .legend .chip.overdue { background: #ffebee; color: #b71c1c; }
+
+        .timeline { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+        .hour-row { display: grid; grid-template-columns: 86px 1fr; border-top: 1px solid #f0f0f0; min-height: 48px; }
+        .hour-row:first-child { border-top: none; }
+        .hour-label { background: #fafafa; border-right: 1px solid #f0f0f0; padding: 0.5rem; font-family: monospace; font-size: 0.9rem; color: #555; }
+        .hour-content { padding: 0.45rem 0.6rem; }
+
+        .task { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; padding: 0.4rem 0.5rem; border-radius: 6px; background: #f7f8fa; border-left: 4px solid #9ca3af; }
+        .task:last-child { margin-bottom: 0; }
+        .task .time { min-width: 92px; font-family: monospace; color: #374151; font-size: 0.86rem; }
+        .task .title { flex: 1; }
+        .task .status { font-size: 0.82rem; color: #6b7280; }
+
+        .task.done { border-left-color: #2e7d32; background: #e8f5e9; }
+        .task.done .title { color: #1b5e20; }
+        .task.done .status { color: #1b5e20; }
+
+        .task.overdue { border-left-color: #c62828; background: #ffebee; }
+        .task.overdue .title { color: #b71c1c; }
+        .task.overdue .status { color: #b71c1c; }
+
+        .task .check { color: #2e7d32; font-weight: 700; }
+        .task.empty { border-left-color: #d1d5db; background: #fff; color: #9ca3af; font-style: italic; }
+    </style>
+</head>
+<body>
+    <aside class="app-sidebar">
+        <nav>
+            <a href="/" data-nav="dev">开发</a>
+            <a href="/tech.html" data-nav="tech">技改</a>
+            <a href="/work-plan.html" data-nav="work-plan">工作计划</a>
+        </nav>
+    </aside>
+    <main class="app-main">
+        <div class="work-plan-header">
+            <h1>工作计划（日计划）</h1>
+            <p>早上 00:00-09:59 合并展示为一行，其余按小时展示。绿色对勾表示已完成，红色表示已超时未完成。</p>
+            <div id="todayInfo"></div>
+        </div>
+
+        <div class="legend">
+            <span class="chip">普通计划</span>
+            <span class="chip done"><span>✔</span> 已完成</span>
+            <span class="chip overdue">已超时未完成</span>
+        </div>
+
+        <div class="timeline" id="timeline"></div>
+    </main>
+
+    <script src="/shell.js"></script>
+    <script>
+        function clampHour(v) { return Math.max(0, Math.min(23, v)); }
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function toMinutes(hhmm) {
+            var p = (hhmm || '00:00').split(':');
+            var h = parseInt(p[0], 10) || 0;
+            var m = parseInt(p[1], 10) || 0;
+            return h * 60 + m;
+        }
+
+        var now = new Date();
+        var h = now.getHours();
+
+        // Mock data only: cover done / in-progress / overdue scenarios.
+        var tasks = [
+            { id: 'plan-1', title: '晨间准备与待办梳理', startTime: '07:40', endTime: '08:20', done: true },
+            { id: 'plan-2', title: '上班打卡', startTime: '08:50', endTime: '08:55', done: true },
+            { id: 'plan-3', title: 'check精益看板', startTime: '09:00', endTime: '09:20', done: true },
+            { id: 'plan-4', title: '2001会议室开党会', startTime: '10:00', endTime: '11:00', done: false },
+            { id: 'plan-5', title: '数据库比对项目开发', startTime: '13:45', endTime: '14:45', done: true },
+            { id: 'plan-6', title: '前后端联调', startTime: '15:00', endTime: '16:30', done: false },
+            { id: 'plan-7', title: '发送加班邮件', startTime: '17:00', endTime: '17:15', done: false },
+            { id: 'plan-8', title: '上线', startTime: '19:00', endTime: '19:30', done: false, statusOverride: 'not_started' },
+            { id: 'plan-9', title: '填写上线结果', startTime: '20:00', endTime: '20:30', done: false, statusOverride: 'not_started' }
+        ];
+
+        function getStatus(task, current) {
+            if (task.statusOverride === 'not_started') return 'pending';
+            if (task.done) return 'done';
+            var endMinutes = toMinutes(task.endTime);
+            var endHour = Math.floor(endMinutes / 60);
+            var endMinute = endMinutes % 60;
+            var end = new Date(current.getFullYear(), current.getMonth(), current.getDate(), endHour, endMinute, 0, 0);
+            if (current.getTime() > end.getTime()) return 'overdue';
+            return 'pending';
+        }
+
+        function statusText(status) {
+            if (status === 'done') return '已完成';
+            if (status === 'overdue') return '已超时';
+            return '未开始';
+        }
+
+        function render() {
+            document.getElementById('todayInfo').textContent =
+                '当前时间：' + now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) +
+                ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+
+            function renderRow(label, rowTasks) {
+                var rowHtml = '<div class="hour-row">';
+                rowHtml += '  <div class="hour-label">' + label + '</div>';
+                rowHtml += '  <div class="hour-content">';
+                if (!rowTasks.length) {
+                    rowHtml += '<div class="task empty">暂无计划</div>';
+                } else {
+                    rowTasks.sort(function (a, b) { return toMinutes(a.startTime) - toMinutes(b.startTime); });
+                    rowTasks.forEach(function (task) {
+                        var status = getStatus(task, now);
+                        var icon = status === 'done' ? '<span class="check">✔</span>' : '';
+                        rowHtml += '<div class="task ' + status + '">';
+                        rowHtml += '  <span class="time">' + escapeHtml(task.startTime) + '-' + escapeHtml(task.endTime) + '</span>';
+                        rowHtml += '  <span class="title">' + icon + ' ' + escapeHtml(task.title) + '</span>';
+                        rowHtml += '  <span class="status">' + statusText(status) + '</span>';
+                        rowHtml += '</div>';
+                    });
+                }
+                rowHtml += '  </div>';
+                rowHtml += '</div>';
+                return rowHtml;
+            }
+
+            var html = '';
+            var morningTasks = tasks.filter(function (t) { return toMinutes(t.startTime) < 10 * 60; });
+            html += renderRow('00:00-09:59', morningTasks);
+            for (var hour = 10; hour < 24; hour++) {
+                var hourTasks = tasks.filter(function (t) {
+                    var startMinutes = toMinutes(t.startTime);
+                    return Math.floor(startMinutes / 60) === hour;
+                });
+                html += renderRow(pad2(hour) + ':00', hourTasks);
+            }
+            document.getElementById('timeline').innerHTML = html;
+        }
+
+        function escapeHtml(s) {
+            var d = document.createElement('div');
+            d.textContent = s == null ? '' : s;
+            return d.innerHTML;
+        }
+
+        render();
+    </script>
+</body>
+</html>
