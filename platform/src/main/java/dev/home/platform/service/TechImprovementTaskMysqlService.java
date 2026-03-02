@@ -26,6 +26,7 @@ public class TechImprovementTaskMysqlService {
     static {
         TABLE_NAMES.put(TechImprovementType.VULNERABILITY_FIX, "tech_task_vulnerability_fix");
         TABLE_NAMES.put(TechImprovementType.COMPONENT_UPGRADE, "tech_task_component_upgrade");
+        TABLE_NAMES.put(TechImprovementType.APPLICATION_OBSERVABILITY, "tech_task_application_observability");
         TABLE_NAMES.put(TechImprovementType.DATABASE_COMPLIANCE, "tech_task_database_compliance");
         TABLE_NAMES.put(TechImprovementType.DATABASE_PERFORMANCE, "tech_task_database_performance");
         TABLE_NAMES.put(TechImprovementType.OTHER, "tech_task_other");
@@ -40,7 +41,13 @@ public class TechImprovementTaskMysqlService {
     public List<TechTaskRowDto> listByType(TechImprovementType type) {
         String table = TABLE_NAMES.get(type);
         if (table == null) return new ArrayList<>();
-        String sql = "SELECT id, application_name, issue_description, deadline FROM " + table + " ORDER BY id DESC";
+        String sql = "SELECT id, application_name, issue_description, deadline FROM " + table +
+                " ORDER BY " +
+                "CASE " +
+                "WHEN application_name = 'gateway-service' THEN 0 " +
+                "WHEN application_name = 'auth-service' THEN 1 " +
+                "WHEN application_name = 'order-service' THEN 2 " +
+                "ELSE 3 END, id DESC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapRow(rs, type));
     }
 

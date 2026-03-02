@@ -7,6 +7,7 @@ public enum TechImprovementType {
 
     VULNERABILITY_FIX("漏洞修复"),
     COMPONENT_UPGRADE("组件版本升级"),
+    APPLICATION_OBSERVABILITY("应用观测"),
     DATABASE_COMPLIANCE("数据库规范整改"),
     DATABASE_PERFORMANCE("数据库性能优化"),
     OTHER("其他");

@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS tech_task_component_upgrade (
     PRIMARY KEY (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组件升级';
 
+CREATE TABLE IF NOT EXISTS tech_task_application_observability (
+                                                                   id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                                                   application_name VARCHAR(255) DEFAULT NULL COMMENT '应用名',
+    issue_description TEXT COMMENT '问题/描述',
+    deadline DATE DEFAULT NULL COMMENT '整改截止时间',
+    PRIMARY KEY (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应用观测';
+
 CREATE TABLE IF NOT EXISTS tech_task_database_compliance (
                                                              id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
                                                              application_name VARCHAR(255) DEFAULT NULL COMMENT '应用名',
@@ -79,3 +87,13 @@ CREATE TABLE IF NOT EXISTS tech_task_other (
     deadline DATE DEFAULT NULL COMMENT '整改截止时间',
     PRIMARY KEY (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='其他';
+
+-- =========================================================
+-- 5) 应用观测测试数据（5条）
+-- =========================================================
+INSERT INTO tech_task_application_observability (application_name, issue_description, deadline) VALUES
+('gateway-service', '补齐核心链路traceId透传并校验日志可关联', '2026-03-12'),
+('order-service', '新增订单创建/支付成功/取消三类关键指标监控', '2026-03-13'),
+('payment-service', '补充支付失败告警阈值和夜间值班通知策略', '2026-03-15'),
+('auth-service', '接入登录成功率与错误码分布看板', '2026-03-16'),
+('admin-console', '前端页面白屏与接口超时埋点补齐', '2026-03-18');

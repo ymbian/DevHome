@@ -24,6 +24,8 @@
         .task .time { min-width: 92px; font-family: monospace; color: #374151; font-size: 0.86rem; }
         .task .title { flex: 1; }
         .task .status { font-size: 0.82rem; color: #6b7280; }
+        .task .status.status-pending-custom { color: #d97706; font-weight: 600; }
+        .task .tag { display: inline-flex; align-items: center; margin-left: 0.4rem; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; color: #1d4ed8; background: #dbeafe; }
 
         .task.done { border-left-color: #2e7d32; background: #e8f5e9; }
         .task.done .title { color: #1b5e20; }
@@ -80,9 +82,9 @@
             { id: 'plan-1', title: '晨间准备与待办梳理', startTime: '07:40', endTime: '08:20', done: true },
             { id: 'plan-2', title: '上班打卡', startTime: '08:50', endTime: '08:55', done: true },
             { id: 'plan-3', title: 'check精益看板', startTime: '09:00', endTime: '09:20', done: true },
-            { id: 'plan-4', title: '2001会议室开党会', startTime: '10:00', endTime: '11:00', done: false },
+            { id: 'plan-4', title: '党会', locationLabel: '2001会议室', startTime: '10:00', endTime: '11:00', done: false, pendingText: '两会后再定' },
             { id: 'plan-5', title: '数据库比对项目开发', startTime: '13:45', endTime: '14:45', done: true },
-            { id: 'plan-6', title: '前后端联调', startTime: '15:00', endTime: '16:30', done: false },
+            { id: 'plan-6', title: '前后端联调', startTime: '15:00', endTime: '16:30', done: false, statusOverride: 'overdue' },
             { id: 'plan-7', title: '发送加班邮件', startTime: '17:00', endTime: '17:15', done: false },
             { id: 'plan-8', title: '上线', startTime: '19:00', endTime: '19:30', done: false, statusOverride: 'not_started' },
             { id: 'plan-9', title: '填写上线结果', startTime: '20:00', endTime: '20:30', done: false, statusOverride: 'not_started' }
@@ -90,6 +92,7 @@
 
         function getStatus(task, current) {
             if (task.statusOverride === 'not_started') return 'pending';
+            if (task.statusOverride === 'overdue') return 'overdue';
             if (task.done) return 'done';
             var endMinutes = toMinutes(task.endTime);
             var endHour = Math.floor(endMinutes / 60);
@@ -99,9 +102,10 @@
             return 'pending';
         }
 
-        function statusText(status) {
+        function statusText(task, status) {
             if (status === 'done') return '已完成';
             if (status === 'overdue') return '已超时';
+            if (task && task.pendingText) return task.pendingText;
             return '未开始';
         }
 
@@ -121,10 +125,12 @@
                     rowTasks.forEach(function (task) {
                         var status = getStatus(task, now);
                         var icon = status === 'done' ? '<span class="check">✔</span>' : '';
+                        var tag = task.locationLabel ? '<span class="tag">' + escapeHtml(task.locationLabel) + '</span>' : '';
+                        var statusClass = (status === 'pending' && task.pendingText) ? ' status-pending-custom' : '';
                         rowHtml += '<div class="task ' + status + '">';
                         rowHtml += '  <span class="time">' + escapeHtml(task.startTime) + '-' + escapeHtml(task.endTime) + '</span>';
-                        rowHtml += '  <span class="title">' + icon + ' ' + escapeHtml(task.title) + '</span>';
-                        rowHtml += '  <span class="status">' + statusText(status) + '</span>';
+                        rowHtml += '  <span class="title">' + icon + ' ' + escapeHtml(task.title) + tag + '</span>';
+                        rowHtml += '  <span class="status' + statusClass + '">' + statusText(task, status) + '</span>';
                         rowHtml += '</div>';
                     });
                 }

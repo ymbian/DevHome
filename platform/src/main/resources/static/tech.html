@@ -10,7 +10,16 @@
         .type-tabs .tab { padding: 0.4rem 0.75rem; font-size: 0.9rem; border: none; border-radius: 6px; background: #f0f2f5; color: var(--color-text); cursor: pointer; text-decoration: none; }
         .type-tabs .tab:hover { background: #e5e7eb; }
         .type-tabs .tab.active { background: var(--color-primary); color: #fff; }
-        .type-tabs .tab-refresh { margin-left: auto; }
+        .type-tabs .tab-break { flex-basis: 100%; height: 0; }
+        .type-tabs .tab-refresh {
+            order: 999;
+            width: auto;
+            min-width: 5rem;
+            text-align: center;
+            padding: 0.4rem 0.75rem;
+            margin-left: auto;
+            margin-top: 0.25rem;
+        }
         #message, #result { margin: 0.75rem 0; padding: 0.5rem; border-radius: 6px; font-size: 0.9rem; }
         #result.success { background: #e8f5e9; }
         #result.error { background: #ffebee; }
@@ -31,6 +40,7 @@
         <p>按类型筛选查看任务列表。</p>
         <div class="type-tabs" id="typeTabs">
             <button type="button" class="tab active" data-type="" aria-pressed="true">全部</button>
+            <span class="tab-break" aria-hidden="true"></span>
             <button type="button" class="btn tab-refresh" id="refresh">刷新</button>
         </div>
         <div id="message"></div>
@@ -55,6 +65,7 @@
                 types.forEach(function (t) {
                     html += '<button type="button" class="tab" data-type="' + escapeHtml(t.value) + '">' + escapeHtml(t.label || t.value) + '</button>';
                 });
+                html += '<span class="tab-break" aria-hidden="true"></span>';
                 html += '<button type="button" class="btn tab-refresh" id="refresh">刷新</button>';
                 typeTabsEl.innerHTML = html;
                 typeTabsEl.querySelectorAll('.tab').forEach(function (tab) {
@@ -82,12 +93,12 @@
                     var issueDesc = t.issueDescription != null ? t.issueDescription : t.description;
                     var deadlineStr = t.deadline ? ' · 截止: ' + t.deadline : '';
                     var meta = (t.typeLabel || t.type) + (t.priority ? ' · ' + t.priority : '') + (t.status ? ' · ' + t.status : '') + deadlineStr;
-                    var descPreview = issueDesc ? escapeHtml(issueDesc.substring(0, 120)) + (issueDesc.length > 120 ? '…' : '') : '';
+                    var descPreview = issueDesc ? escapeHtml(issueDesc.substring(0, 120)) + (issueDesc.length > 120 ? '…' : '') : '暂无描述';
                     return '<div class="item">' +
                         '<div class="body">' +
                         '<strong>' + escapeHtml(appName) + '</strong>' +
                         ' <span class="meta">' + meta + '</span>' +
-                        (descPreview ? '<div class="meta">' + descPreview + '</div>' : '') +
+                        '<div class="meta">' + descPreview + '</div>' +
                         (t.pipelineInstanceId ? ' <a href="/design.html?id=' + encodeURIComponent(t.pipelineInstanceId) + '">查看设计</a>' : '') +
                         '</div></div>';
                 }).join('');
