@@ -15,13 +15,13 @@
         </nav>
     </aside>
     <main class="app-main">
+        <div class="site-theme">欢迎来到DevHome，开发者之家</div>
         <h1>需求描述</h1>
         <p>输入自然语言需求，提交后将生成设计文档并驱动 openspec / IDE 流水线。</p>
         <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
         <br>
         <button id="submit" class="btn">提交</button>
         <div id="message"></div>
-        <div id="status"></div>
         <div class="list">
             <h2>历史</h2>
             <div id="history"></div>
@@ -30,16 +30,6 @@
     <script src="/shell.js"></script>
     <script>
         const api = '/api';
-        function showStatus() {
-            fetch(api + '/status').then(r => r.json()).then(d => {
-                const s = document.getElementById('status');
-                s.innerHTML = 'openspec: ' + (d.openspecAvailable ? '✓ ' + (d.openspecVersion || '') : '✗ 未安装') +
-                    ' · 工作目录: ' + (d.openspecWorkDir || '.');
-            }).catch(() => { document.getElementById('status').innerHTML = '状态获取失败'; });
-        }
-        showStatus();
-        setInterval(showStatus, 30000);
-
         document.getElementById('submit').onclick = function () {
             const text = document.getElementById('requirement').value.trim();
             if (!text) { document.getElementById('message').textContent = '请输入需求描述'; return; }

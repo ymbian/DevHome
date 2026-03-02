@@ -14,12 +14,13 @@
         .type-tabs .tab-refresh {
             order: 999;
             width: auto;
-            min-width: 5rem;
             text-align: center;
-            padding: 0.4rem 0.75rem;
             margin-left: auto;
             margin-top: 0.25rem;
+            background: var(--color-primary);
+            color: #fff;
         }
+        .type-tabs .tab-refresh:hover { background: var(--color-primary-hover); }
         #message, #result { margin: 0.75rem 0; padding: 0.5rem; border-radius: 6px; font-size: 0.9rem; }
         #result.success { background: #e8f5e9; }
         #result.error { background: #ffebee; }
@@ -36,12 +37,13 @@
         </nav>
     </aside>
     <main class="app-main">
+        <div class="site-theme">欢迎来到DevHome，开发者之家</div>
         <h1>技改任务</h1>
         <p>按类型筛选查看任务列表。</p>
         <div class="type-tabs" id="typeTabs">
             <button type="button" class="tab active" data-type="" aria-pressed="true">全部</button>
             <span class="tab-break" aria-hidden="true"></span>
-            <button type="button" class="btn tab-refresh" id="refresh">刷新</button>
+            <button type="button" class="tab tab-refresh" id="refresh">刷新</button>
         </div>
         <div id="message"></div>
         <div id="result"></div>
@@ -66,7 +68,7 @@
                     html += '<button type="button" class="tab" data-type="' + escapeHtml(t.value) + '">' + escapeHtml(t.label || t.value) + '</button>';
                 });
                 html += '<span class="tab-break" aria-hidden="true"></span>';
-                html += '<button type="button" class="btn tab-refresh" id="refresh">刷新</button>';
+                html += '<button type="button" class="tab tab-refresh" id="refresh">刷新</button>';
                 typeTabsEl.innerHTML = html;
                 typeTabsEl.querySelectorAll('.tab').forEach(function (tab) {
                     tab.addEventListener('click', function () { setType(tab.getAttribute('data-type') || ''); });
