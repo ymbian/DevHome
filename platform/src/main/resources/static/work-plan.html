@@ -37,6 +37,14 @@
 
         .task .check { color: #2e7d32; font-weight: 700; }
         .task.empty { border-left-color: #d1d5db; background: #fff; color: #9ca3af; font-style: italic; }
+        .task-input { width: 100%; box-sizing: border-box; font: inherit; color: #374151; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.4rem 0.5rem; font-style: normal; }
+        .task-input::placeholder { color: #9ca3af; font-style: italic; }
+        .task-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+        .save-hint { font-size: 0.85rem; color: #059669; margin-top: 0.35rem; }
+        .slot-edit-row { display: flex; align-items: center; gap: 0.5rem; }
+        .slot-edit-row .task-input { flex: 1; min-width: 0; }
+        .btn-save-slot { flex-shrink: 0; padding: 0.35rem 0.65rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid #d1d5db; background: #f9fafb; color: #374151; cursor: pointer; }
+        .btn-save-slot:hover { background: #f3f4f6; border-color: #9ca3af; }
     </style>
 </head>
 <body>
@@ -53,6 +61,7 @@
             <h1>工作计划（日计划）</h1>
             <p>早上 00:00-09:59 合并展示为一行，其余按小时展示。绿色对勾表示已完成，红色表示已超时未完成。</p>
             <div id="todayInfo"></div>
+            <div id="saveHint" class="save-hint" style="visibility: hidden;">已自动保存</div>
         </div>
 
         <div class="legend">
@@ -77,8 +86,11 @@
 
         var now = new Date();
         var h = now.getHours();
+        function planDateStr() {
+            return now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
+        }
 
-        // Mock data only: cover done / in-progress / overdue scenarios.
+        var customPlans = {};
         var tasks = [
             { id: 'plan-1', title: '晨间准备与待办梳理', startTime: '07:40', endTime: '08:20', done: true },
             { id: 'plan-2', title: '上班打卡', startTime: '08:50', endTime: '08:55', done: true },
@@ -120,7 +132,11 @@
                 rowHtml += '  <div class="hour-label">' + label + '</div>';
                 rowHtml += '  <div class="hour-content">';
                 if (!rowTasks.length) {
-                    rowHtml += '<div class="task empty">暂无计划</div>';
+                    var saved = customPlans[label] || '';
+                    rowHtml += '<div class="slot-edit-row">';
+                    rowHtml += '<input type="text" class="task empty task-input" placeholder="暂无计划" data-slot="' + escapeHtml(label) + '" value="' + escapeHtml(saved) + '">';
+                    rowHtml += '<button type="button" class="btn-save-slot" data-slot="' + escapeHtml(label) + '" aria-label="保存该时段计划">保存</button>';
+                    rowHtml += '</div>';
                 } else {
                     rowTasks.sort(function (a, b) { return toMinutes(a.startTime) - toMinutes(b.startTime); });
                     rowTasks.forEach(function (task) {
@@ -159,7 +175,80 @@
             return d.innerHTML;
         }
 
-        render();
+        function saveSlot(slot, text) {
+            fetch('/api/work-plan/slots', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: planDateStr(), slot: slot, text: text || '' })
+            }).then(function (r) {
+                if (r.ok) showSaveHint();
+            });
+        }
+
+        function showSaveHint() {
+            var node = document.getElementById('saveHint');
+            if (node) {
+                node.textContent = '已自动保存';
+                node.style.visibility = 'visible';
+                clearTimeout(node._hide);
+                node._hide = setTimeout(function () { node.style.visibility = 'hidden'; }, 2000);
+            }
+        }
+
+        var saveSlotTimer = null;
+        function saveSlotDebounced(slot, text) {
+            if (saveSlotTimer) clearTimeout(saveSlotTimer);
+            saveSlotTimer = setTimeout(function () {
+                saveSlotTimer = null;
+                saveSlot(slot, text);
+            }, 500);
+        }
+
+        document.getElementById('timeline').addEventListener('input', function (e) {
+            var el = e.target;
+            if (el.classList && el.classList.contains('task-input') && el.dataset.slot) {
+                customPlans[el.dataset.slot] = el.value;
+                saveSlotDebounced(el.dataset.slot, el.value);
+            }
+        });
+
+        document.getElementById('timeline').addEventListener('blur', function (e) {
+            var el = e.target;
+            if (el.classList && el.classList.contains('task-input') && el.dataset.slot) {
+                if (saveSlotTimer) {
+                    clearTimeout(saveSlotTimer);
+                    saveSlotTimer = null;
+                }
+                customPlans[el.dataset.slot] = el.value;
+                saveSlot(el.dataset.slot, el.value);
+            }
+        }, true);
+
+        document.getElementById('timeline').addEventListener('click', function (e) {
+            var btn = e.target;
+            if (btn.classList && btn.classList.contains('btn-save-slot') && btn.dataset.slot) {
+                var content = btn.closest('.hour-content');
+                var input = content ? content.querySelector('.task-input') : null;
+                var value = input ? input.value : '';
+                customPlans[btn.dataset.slot] = value;
+                saveSlot(btn.dataset.slot, value);
+            }
+        });
+
+        function loadSlotsThenRender() {
+            var date = planDateStr();
+            fetch('/api/work-plan/slots?date=' + encodeURIComponent(date))
+                .then(function (r) { return r.ok ? r.json() : {}; })
+                .then(function (map) {
+                    if (map && typeof map === 'object') {
+                        for (var k in map) { customPlans[k] = map[k] || ''; }
+                    }
+                    render();
+                })
+                .catch(function () { render(); });
+        }
+
+        loadSlotsThenRender();
     </script>
 </body>
 </html>
