@@ -4,9 +4,11 @@ import dev.home.platform.domain.PipelineInstance;
 import dev.home.platform.domain.PipelineInstanceRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,16 @@ public class RequirementController {
         return repository.findByInstanceId(id)
                 .map(p -> ResponseEntity.ok(toResponse(p)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        Optional<PipelineInstance> opt = repository.findByInstanceId(id);
+        if (!opt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        repository.delete(opt.get());
+        return ResponseEntity.noContent().build();
     }
 
     private RequirementSummary toSummary(PipelineInstance p) {

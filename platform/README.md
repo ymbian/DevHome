@@ -44,9 +44,11 @@
 
 | 配置项 | 说明 | 默认 |
 |--------|------|------|
-| `platform.openspec-work-dir` | openspec 工作目录（仓库根路径，如 DevHome） | `.` |
+| `platform.openspec-work-dir` | openspec 工作目录；**生成的 proposal/design/specs/tasks 会写在此目录下的 `openspec/changes/<changeName>/`，而非 DevHome 仓库内**。可设为被开发项目根路径（如 `/Users/rose/IdeaProjects/SDD-Presentation`），则规格文档落在该项目下。 | `.` |
 | `platform.llm-endpoint` | 可选，设计生成用 LLM API 地址 | 未配置则用模板 |
 | `platform.cursor-api-endpoint` | 可选，Cursor API 地址 | 未配置则仅提供任务清单 |
+
+**说明**：将 `platform.openspec-work-dir` 设为项目目录（例如 SDD-Presentation）后，用户提交需求并点击「设计」/「运行 openspec」时，生成的 openspec 规格文档会写入**该项目的** `openspec/changes/` 下，不会写在 DevHome 目录下。若目标目录下尚无 `openspec/`，平台会先执行 `openspec init` 再创建 change。
 
 环境变量示例（Spring Boot 宽松绑定）:
 
@@ -69,7 +71,7 @@
 
 1. 在首页输入需求并提交 → 得到实例 ID。
 2. 点击该实例的「设计」→ 在设计页点击「生成设计」→ 可编辑后「保存」。
-3. 点击「运行 openspec」→ 在配置的 `platform.openspec-work-dir` 下会创建 `openspec/changes/rtc-<instanceId>/` 并写入 proposal、design、specs、tasks。
+3. 点击「运行 openspec」→ 在配置的 `platform.openspec-work-dir` 下会创建 `openspec/changes/rtc-<instanceId>/` 并写入 proposal、design、specs、tasks。**若 work-dir 设为项目路径（如 SDD-Presentation），则上述文件生成在该项目目录下，不在 DevHome 下。** 建议本地验证：提交需求 → 开启 spec 模式生成设计 → 确认 `<work-dir>/openspec/changes/<changeName>/` 下存在 proposal.md、specs、tasks.md。
 4. 页面会显示「编码就绪」及指引；在 Cursor 中对该仓库执行 **`/opsx:apply`** 或指定变更名进行实现。
 
 ## 与 Cursor 配合使用

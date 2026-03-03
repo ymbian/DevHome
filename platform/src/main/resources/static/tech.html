@@ -90,6 +90,7 @@
             const url = selectedType ? api + '/tasks?type=' + encodeURIComponent(selectedType) : api + '/tasks';
             fetch(url).then(r => r.json()).then(list => {
                 if (!list.length) { taskList.innerHTML = '<p>暂无任务</p>'; return; }
+                // Optional follow-up: add .staged-progress per row when API returns pipeline stageIndex/status (see index.html renderStagedProgress).
                 taskList.innerHTML = list.map(t => {
                     var appName = t.applicationName != null ? t.applicationName : t.title;
                     var issueDesc = t.issueDescription != null ? t.issueDescription : t.description;
