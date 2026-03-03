@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>需求到编码 · 平台</title>
     <link rel="stylesheet" href="/common.css">
+    <style>
+        .btn-upload { margin-right: 0.5rem; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-upload:hover { background: #e5e7eb; border-color: #9ca3af; }
+    </style>
 </head>
 <body>
     <aside class="app-sidebar">
@@ -20,6 +24,8 @@
         <p>输入自然语言需求，提交后将生成设计文档、spec文档，并驱动 IDE、 流水线</p>
         <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
         <br>
+        <input type="file" id="requirementFile" accept=".txt,.md,text/*" style="display: none;">
+        <button type="button" id="uploadRequirement" class="btn btn-upload">上传</button>
         <button id="submit" class="btn">提交</button>
         <div id="message"></div>
         <div class="list">
@@ -30,6 +36,27 @@
     <script src="/shell.js"></script>
     <script>
         const api = '/api';
+        document.getElementById('uploadRequirement').onclick = function () { document.getElementById('requirementFile').click(); };
+
+        document.getElementById('requirementFile').onchange = function () {
+            var input = this;
+            var file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            var maxSize = 1024 * 1024;
+            if (file.size > maxSize) {
+                document.getElementById('message').textContent = '文件过大，请选择 1MB 以内的文本文件';
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function () {
+                document.getElementById('requirement').value = reader.result;
+                document.getElementById('message').textContent = '已加载文件内容';
+            };
+            reader.onerror = function () { document.getElementById('message').textContent = '无法读取该文件'; };
+            reader.readAsText(file, 'UTF-8');
+        };
+
         document.getElementById('submit').onclick = function () {
             const text = document.getElementById('requirement').value.trim();
             if (!text) { document.getElementById('message').textContent = '请输入需求描述'; return; }
