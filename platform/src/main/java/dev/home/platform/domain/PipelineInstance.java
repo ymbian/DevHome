@@ -45,6 +45,10 @@ public class PipelineInstance {
     @Lob
     private String designContent;
 
+    /** Whether latest design generation enabled spec mode. */
+    @Column
+    private Boolean specModeEnabled;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) createdAt = Instant.now();
@@ -76,4 +80,7 @@ public class PipelineInstance {
 
     public String getDesignContent() { return designContent; }
     public void setDesignContent(String designContent) { this.designContent = designContent; }
+
+    public Boolean getSpecModeEnabled() { return specModeEnabled; }
+    public void setSpecModeEnabled(Boolean specModeEnabled) { this.specModeEnabled = specModeEnabled; }
 }

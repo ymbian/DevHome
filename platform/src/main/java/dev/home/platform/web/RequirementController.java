@@ -57,6 +57,7 @@ public class RequirementController {
                 : p.getRequirementText());
         s.setCreatedAt(p.getCreatedAt().toString());
         s.setStatus(p.getStatus());
+        applyStageStatus(p, s);
         return s;
     }
 
@@ -70,7 +71,31 @@ public class RequirementController {
         r.setDesignPath(p.getDesignPath());
         r.setChangePath(p.getChangePath());
         r.setDesignContent(p.getDesignContent());
+        applyStageStatus(p, r);
         return r;
+    }
+
+    private void applyStageStatus(PipelineInstance p, StageStatusTarget target) {
+        boolean requirement = p.getRequirementText() != null && !p.getRequirementText().trim().isEmpty();
+        boolean design = (p.getDesignContent() != null && !p.getDesignContent().trim().isEmpty())
+                || "DESIGN_GENERATED".equals(p.getStatus())
+                || "ARTIFACTS_READY".equals(p.getStatus())
+                || "CODING_READY".equals(p.getStatus());
+        boolean coding = "ARTIFACTS_READY".equals(p.getStatus()) || "CODING_READY".equals(p.getStatus());
+        boolean specModeEnabled = p.getSpecModeEnabled() != null
+                ? p.getSpecModeEnabled().booleanValue()
+                : (p.getChangePath() != null && !p.getChangePath().trim().isEmpty());
+        target.setRequirement(requirement);
+        target.setDesign(design);
+        target.setSpecModeEnabled(specModeEnabled);
+        target.setCoding(coding);
+    }
+
+    private interface StageStatusTarget {
+        void setRequirement(boolean requirement);
+        void setDesign(boolean design);
+        void setSpecModeEnabled(boolean specModeEnabled);
+        void setCoding(boolean coding);
     }
 
     public static class RequirementRequest {
@@ -79,11 +104,15 @@ public class RequirementController {
         public void setText(String text) { this.text = text; }
     }
 
-    public static class RequirementSummary {
+    public static class RequirementSummary implements StageStatusTarget {
         private String id;
         private String excerpt;
         private String createdAt;
         private String status;
+        private boolean requirement;
+        private boolean design;
+        private boolean specModeEnabled;
+        private boolean coding;
         public String getId() { return id; }
         public void setId(String id) { this.id = id; }
         public String getExcerpt() { return excerpt; }
@@ -92,9 +121,17 @@ public class RequirementController {
         public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public boolean isRequirement() { return requirement; }
+        public void setRequirement(boolean requirement) { this.requirement = requirement; }
+        public boolean isDesign() { return design; }
+        public void setDesign(boolean design) { this.design = design; }
+        public boolean isSpecModeEnabled() { return specModeEnabled; }
+        public void setSpecModeEnabled(boolean specModeEnabled) { this.specModeEnabled = specModeEnabled; }
+        public boolean isCoding() { return coding; }
+        public void setCoding(boolean coding) { this.coding = coding; }
     }
 
-    public static class RequirementResponse {
+    public static class RequirementResponse implements StageStatusTarget {
         private String id;
         private String text;
         private String createdAt;
@@ -103,6 +140,10 @@ public class RequirementController {
         private String designPath;
         private String changePath;
         private String designContent;
+        private boolean requirement;
+        private boolean design;
+        private boolean specModeEnabled;
+        private boolean coding;
         public String getDesignContent() { return designContent; }
         public void setDesignContent(String designContent) { this.designContent = designContent; }
         public String getId() { return id; }
@@ -119,5 +160,13 @@ public class RequirementController {
         public void setDesignPath(String designPath) { this.designPath = designPath; }
         public String getChangePath() { return changePath; }
         public void setChangePath(String changePath) { this.changePath = changePath; }
+        public boolean isRequirement() { return requirement; }
+        public void setRequirement(boolean requirement) { this.requirement = requirement; }
+        public boolean isDesign() { return design; }
+        public void setDesign(boolean design) { this.design = design; }
+        public boolean isSpecModeEnabled() { return specModeEnabled; }
+        public void setSpecModeEnabled(boolean specModeEnabled) { this.specModeEnabled = specModeEnabled; }
+        public boolean isCoding() { return coding; }
+        public void setCoding(boolean coding) { this.coding = coding; }
     }
 }

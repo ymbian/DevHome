@@ -68,6 +68,8 @@ public class DesignController {
                 .map(p -> {
                     try {
                         String content = designService.generate(id);
+                        p.setSpecModeEnabled(specMode);
+                        repository.save(p);
                         Map<String, String> body = new HashMap<>();
                         body.put("content", content);
                         if (specMode) {
