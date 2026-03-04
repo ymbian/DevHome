@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+
 @RestController
 @RequestMapping("/api/instances/{id}")
 public class DesignController {
@@ -59,6 +61,28 @@ public class DesignController {
         p.setDesignContent(content != null ? content : "");
         repository.save(p);
         return (ResponseEntity<?>) ResponseEntity.ok().build();
+    }
+
+    /**
+     * 自动获取 Git 仓库地址（占位：后端逻辑暂未实现）。
+     */
+    @GetMapping("/git-url")
+    public ResponseEntity<Map<String, String>> getGitUrl(@PathVariable String id) {
+        if (!repository.findByInstanceId(id).isPresent()) {
+            return notFoundMap();
+        }
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Collections.singletonMap("message", "自动获取 Git 地址功能开发中"));
+    }
+
+    /**
+     * 将设计内容保存到指定 Git 仓库（占位：推送逻辑暂未实现）。
+     */
+    @PostMapping("/design/save-to-git")
+    public ResponseEntity<Map<String, String>> saveDesignToGit(@PathVariable String id, @RequestBody Map<String, String> body) {
+        if (!repository.findByInstanceId(id).isPresent()) {
+            return notFoundMap();
+        }
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Collections.singletonMap("message", "保存到 Git 功能开发中"));
     }
 
     @PostMapping("/design/generate")

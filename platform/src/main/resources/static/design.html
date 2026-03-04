@@ -45,6 +45,11 @@
         .spec-switch .spec-toggle:focus-visible {
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
         }
+        .design-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.75rem 0; }
+        .git-label { font-size: 0.9rem; color: var(--color-text-muted); margin-right: 0.25rem; }
+        .git-input { flex: 1; min-width: 200px; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn-secondary:hover { background: #e5e7eb; }
     </style>
 </head>
 <body>
@@ -59,8 +64,13 @@
         <h1>设计文档</h1>
         <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
         <button id="generate" class="btn">生成设计</button>
-        <button id="save" class="btn">保存</button>
         <label class="spec-switch"><input type="checkbox" id="specMode" class="spec-toggle"> spec模式</label>
+        <div class="design-actions">
+            <label class="git-label">Git 仓库地址</label>
+            <input type="text" id="gitUrl" class="git-input" placeholder="如 https://github.com/xxx/repo.git" />
+            <button type="button" id="autoGitUrl" class="btn btn-secondary">自动获取 git 地址</button>
+            <button type="button" id="saveToGit" class="btn">保存到 git 仓库</button>
+        </div>
         <div id="msg"></div>
         <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
         <div id="codingGuide"></div>
@@ -97,13 +107,46 @@
                     })
                     .catch(() => { document.getElementById('msg').textContent = '生成失败'; });
             };
-            document.getElementById('save').onclick = function () {
+            document.getElementById('autoGitUrl').onclick = function () {
+                document.getElementById('msg').textContent = '获取中...';
+                fetch('/api/instances/' + id + '/git-url')
+                    .then(function (r) {
+                        if (r.status === 501) { document.getElementById('msg').textContent = '自动获取 Git 地址功能开发中'; return null; }
+                        return r.ok ? r.json() : Promise.reject();
+                    })
+                    .then(function (d) {
+                        if (d && d.gitUrl) {
+                            document.getElementById('gitUrl').value = d.gitUrl;
+                            document.getElementById('msg').textContent = '已填充 Git 地址';
+                        } else if (d !== null) {
+                            document.getElementById('msg').textContent = '暂无已配置的 Git 地址';
+                        }
+                    })
+                    .catch(function () { document.getElementById('msg').textContent = '获取失败'; });
+            };
+            document.getElementById('saveToGit').onclick = function () {
+                var gitUrl = (document.getElementById('gitUrl').value || '').trim();
+                if (!gitUrl) {
+                    document.getElementById('msg').textContent = '请先填写 Git 仓库地址';
+                    return;
+                }
                 document.getElementById('msg').textContent = '保存中...';
-                fetch('/api/instances/' + id + '/design', {
-                    method: 'PUT',
+                fetch('/api/instances/' + id + '/design/save-to-git', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: document.getElementById('design').value })
-                }).then(r => r.ok ? (document.getElementById('msg').textContent = '已保存') : Promise.reject()).catch(() => { document.getElementById('msg').textContent = '保存失败'; });
+                    body: JSON.stringify({ gitUrl: gitUrl, content: document.getElementById('design').value })
+                })
+                    .then(function (r) {
+                        if (r.status === 501) {
+                            document.getElementById('msg').textContent = '保存到 Git 功能开发中，请稍后再试';
+                            return;
+                        }
+                        return r.ok ? r.json() : Promise.reject();
+                    })
+                    .then(function (d) {
+                        if (d !== undefined) document.getElementById('msg').textContent = '已保存到 Git 仓库';
+                    })
+                    .catch(function () { document.getElementById('msg').textContent = '保存到 Git 失败'; });
             };
             fetch('/api/instances/' + id + '/coding-guide').then(r => r.ok ? r.json() : {}).then(d => {
                 if (d.ready) {
