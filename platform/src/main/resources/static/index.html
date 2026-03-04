@@ -32,7 +32,7 @@
         <textarea id="requirement" placeholder="例如：为内部系统增加用户登录与角色权限管理..."></textarea>
         <br>
         <input type="file" id="requirementFile" accept=".txt,.md,text/*" style="display: none;">
-        <button type="button" id="uploadRequirement" class="btn btn-upload">上传</button>
+        <button type="button" id="uploadRequirement" class="btn btn-upload">上传特性文档</button>
         <button id="submit" class="btn">提交</button>
         <div id="message"></div>
         <div class="list">
@@ -113,7 +113,7 @@
             if (s === 'FAILED') return 2;
             return 1;
         }
-        var STAGE_LABELS = ['提交', '设计', '制品', '编码'];
+        var STAGE_LABELS = ['需求提交', '设计', '制品', '编码'];
         function renderStagedProgress(stepIndex) {
             var step = Math.min(Math.max(1, stepIndex), 4);
             var html = '';
