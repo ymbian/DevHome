@@ -50,6 +50,9 @@
         .git-input { flex: 1; min-width: 200px; }
         .btn-secondary { background: #f3f4f6; color: #374151; }
         .btn-secondary:hover { background: #e5e7eb; }
+        /* 自动获取按钮：轮廓主色，更易辨认 */
+        .btn-outline { background: #fff; color: var(--color-primary); border: 1px solid var(--color-primary); }
+        .btn-outline:hover { background: rgba(37, 99, 235, 0.08); border-color: var(--color-primary-hover); color: var(--color-primary-hover); }
     </style>
 </head>
 <body>
@@ -68,8 +71,8 @@
         <div class="design-actions">
             <label class="git-label">Git 仓库地址</label>
             <input type="text" id="gitUrl" class="git-input" placeholder="如 https://github.com/xxx/repo.git" />
-            <button type="button" id="autoGitUrl" class="btn btn-secondary">自动获取 git 地址</button>
-            <button type="button" id="saveToGit" class="btn">保存到 git 仓库</button>
+            <button type="button" id="autoGitUrl" class="btn btn-outline">自动匹配</button>
+            <button type="button" id="saveToGit" class="btn">保存到仓库</button>
         </div>
         <div id="msg"></div>
         <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
