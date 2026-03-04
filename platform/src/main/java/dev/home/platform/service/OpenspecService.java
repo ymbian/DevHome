@@ -94,6 +94,7 @@ public class OpenspecService {
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workDir.toFile());
         pb.redirectErrorStream(true);
+        pb.environment().put("OPENSPEC_TELEMETRY", "0");
         Process p = pb.start();
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
