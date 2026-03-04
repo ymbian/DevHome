@@ -1,15 +1,33 @@
-/* --- Layout (task 1.1) --- */
+/* --- Layout + Tech-Premium tokens (task 1.1, 1.2) --- */
 :root {
   --sidebar-width: 11rem;
   --main-max-width: 720px;
-  --color-bg: #fafafa;
-  --color-sidebar-bg: #f0f2f5;
-  --color-sidebar-border: #e0e4e8;
+  /* Colors: 侧边栏深蓝，主区域同色系蓝灰，字可读 */
+  --color-bg: #94a3b8;
+  --color-bg-elevated: #cbd5e1;
+  --color-bg-card: #e2e8f0;
+  --color-sidebar-bg: #1e293b;
+  --color-sidebar-border: #334155;
+  --color-sidebar-text: #e2e8f0;
+  --color-sidebar-text-active: #ffffff;
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
-  --color-text: #1f2937;
-  --color-text-muted: #6b7280;
-  --radius: 6px;
+  --color-secondary: #4338ca;
+  --color-accent: #6366f1;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: #64748b;
+  /* Radius */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  /* Shadows - 更明显的层级 */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.3);
+  /* Motion */
+  --motion-duration: 0.2s;
   --space: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
@@ -23,21 +41,22 @@ body {
   font-size: 15px;
   line-height: 1.5;
   color: var(--color-text);
-  background: var(--color-bg);
+  background: var(--color-bg) !important;
   margin: 0;
   padding: 0;
   display: flex;
   min-height: 100vh;
 }
 
-/* --- Sidebar (task 1.2) --- */
+/* --- Sidebar - 淡蓝底，深色字可读 --- */
 .app-sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
   background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-sidebar-border);
   padding: var(--space-md) 0;
-  box-shadow: 1px 0 4px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-lg);
+  transition: background var(--motion-duration), border-color var(--motion-duration);
 }
 
 .app-sidebar nav {
@@ -49,25 +68,26 @@ body {
 .app-sidebar a {
   display: block;
   padding: 0.5rem 1rem;
-  color: var(--color-text);
+  color: var(--color-sidebar-text);
   text-decoration: none;
   font-weight: 500;
   border-left: 3px solid transparent;
   margin-left: 0;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--motion-duration), border-color var(--motion-duration), color var(--motion-duration);
 }
 
 .app-sidebar a:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-sidebar-text-active);
 }
 
 .app-sidebar a.active {
-  background: rgba(37, 99, 235, 0.1);
+  background: rgba(37, 99, 235, 0.25);
   border-left-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-sidebar-text-active);
 }
 
-/* --- Main content area --- */
+/* --- Main content area - 主区域藏青底 --- */
 .app-main {
   flex: 1;
   min-width: 0;
@@ -75,22 +95,50 @@ body {
   margin: 0 auto;
   padding: var(--space-md);
   width: 100%;
+  background: var(--color-bg);
+  min-height: 100vh;
+}
+.app-main .card,
+.app-main .item,
+.app-main input,
+.app-main select,
+.app-main textarea {
+  color: var(--color-text);
+}
+.app-main > p {
+  color: #0f172a !important;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-weight: 500;
+  margin: 0 0 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  background: #e2e8f0;
+  border-radius: var(--radius);
+  max-width: 100%;
+}
+.app-main .item a,
+.app-main .item small,
+.app-main .item .meta {
+  color: var(--color-text-muted);
+}
+.app-main .item a {
+  color: var(--color-primary);
 }
 
-/* --- Page theme banner --- */
+/* --- Page theme banner (task 5.1) - 科技感渐变横幅 --- */
 .site-theme {
   margin: 0 0 1.2rem;
   padding: 1.1rem 1.4rem;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 55%, #6d28d9 100%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 50%, #7c3aed 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
   font-size: clamp(1.7rem, 2.1vw, 2.15rem);
-  font-weight: 950;
+  font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.22;
-  text-shadow: 0 2px 10px rgba(2, 6, 23, 0.55), 0 0 1px rgba(255, 255, 255, 0.45);
-  box-shadow: 0 14px 30px rgba(67, 56, 202, 0.38);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg), 0 8px 32px rgba(37, 99, 235, 0.35);
   text-align: center;
   text-wrap: balance;
 }
@@ -105,16 +153,53 @@ body {
   cursor: pointer;
   background: var(--color-primary);
   color: #fff;
-  transition: background 0.15s;
+  transition: background var(--motion-duration), box-shadow var(--motion-duration), transform var(--motion-duration);
 }
-
 .btn:hover {
   background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
 }
-
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+.btn-secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+.btn-outline {
+  background: var(--color-bg-elevated);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+.btn-outline:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: var(--color-primary-hover);
+  color: var(--color-primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+.btn-upload {
+  margin-right: 0.5rem;
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 1px solid var(--color-border);
+}
+.btn-upload:hover {
+  background: #f1f5f9;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- Form controls (task 3.2) --- */
@@ -125,18 +210,18 @@ textarea {
   padding: 0.5rem 0.6rem;
   font-size: 0.9375rem;
   font-family: inherit;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: #fff;
+  background: var(--color-bg-elevated);
   color: var(--color-text);
+  transition: border-color var(--motion-duration), box-shadow var(--motion-duration);
 }
-
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--shadow-focus);
 }
 
 textarea {
@@ -145,15 +230,20 @@ textarea {
   width: 100%;
 }
 
-/* --- Cards / list items (task 3.3) --- */
+/* --- Cards / list items (task 4.1) - 更明显的卡片层级 --- */
 .card,
 .item {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 0.75rem var(--space-md);
   margin-bottom: var(--space);
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--motion-duration), border-color var(--motion-duration), transform var(--motion-duration);
+}
+.card:hover,
+.item:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 .item small,
@@ -171,16 +261,14 @@ textarea {
   text-decoration: underline;
 }
 
-/* --- Typography --- */
-h1 { font-size: 1.25rem; margin-top: 0; margin-bottom: 0.5rem; }
-h2 { font-size: 1.1rem; margin-top: var(--space-lg); margin-bottom: var(--space); }
-
+/* --- Typography (task 5.2) --- */
+h1 { font-size: 1.35rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; color: var(--color-text); }
+h2 { font-size: 1.15rem; font-weight: 600; margin-top: var(--space-lg); margin-bottom: var(--space); color: var(--color-text); }
 .list { margin-top: var(--space-lg); }
-
 #status {
   margin: var(--space-md) 0;
   padding: var(--space);
-  background: #f0f2f5;
+  background: var(--color-sidebar-bg);
   border-radius: var(--radius);
   font-size: 0.9rem;
   color: var(--color-text-muted);
@@ -188,7 +276,7 @@ h2 { font-size: 1.1rem; margin-top: var(--space-lg); margin-bottom: var(--space)
 
 /* Staged progress bar (per-task pipeline step) */
 .staged-progress { display: flex; align-items: center; gap: 2px; margin-top: 0.35rem; flex-wrap: wrap; }
-.staged-progress-seg { padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #6b7280; background: #e5e7eb; }
+.staged-progress-seg { padding: 2px 6px; border-radius: var(--radius-sm); font-size: 11px; color: #0f172a; background: #e2e8f0; }
 .staged-progress-seg.done { background: #10b981; color: #fff; }
-.staged-progress-seg.current { background: #3b82f6; color: #fff; font-weight: 600; }
-.staged-progress-seg.pending { background: #e5e7eb; color: #9ca3af; }
+.staged-progress-seg.current { background: var(--color-primary); color: #fff; font-weight: 600; }
+.staged-progress-seg.pending { background: #cbd5e1; color: #334155; }
