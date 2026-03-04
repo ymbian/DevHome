@@ -6,7 +6,7 @@
     <title>设计文档</title>
     <link rel="stylesheet" href="/common.css?v=4">
     <style>
-        textarea#design { min-height: 320px; font-family: monospace; font-size: 0.9rem; }
+        textarea#design { min-height: 600px; font-family: monospace; font-size: 0.9rem; }
         #msg { margin: 0.5rem 0; color: var(--color-text); }
         #codingGuide { margin-top: 1rem; padding: 0.75rem; background: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: var(--radius); display: none; }
         .spec-switch { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: 0.75rem; font-size: 0.95rem; vertical-align: middle; }
@@ -60,7 +60,7 @@
     </aside>
     <main class="app-main">
         <h1>设计文档</h1>
-        <p><a href="/">← 返回需求列表</a> <span id="instanceId"></span></p>
+        <p class="design-nav"><a href="/" class="link-back">返回需求列表</a> <span id="instanceId"></span></p>
         <button id="generate" class="btn">生成设计</button>
         <label class="spec-switch"><input type="checkbox" id="specMode" class="spec-toggle"> spec模式</label>
         <div class="design-actions">

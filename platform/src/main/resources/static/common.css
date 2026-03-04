@@ -3,9 +3,9 @@
   --sidebar-width: 11rem;
   --main-max-width: 720px;
   /* Colors: 侧边栏深蓝，主区域同色系蓝灰，字可读 */
-  --color-bg: #94a3b8;
-  --color-bg-elevated: #cbd5e1;
-  --color-bg-card: #e2e8f0;
+  --color-bg: #cbd5e1;
+  --color-bg-elevated: #e2e8f0;
+  --color-bg-card: #f1f5f9;
   --color-sidebar-bg: #1e293b;
   --color-sidebar-border: #334155;
   --color-sidebar-text: #e2e8f0;
@@ -125,22 +125,48 @@ body {
   color: var(--color-primary);
 }
 
-/* --- Page theme banner (task 5.1) - 科技感渐变横幅 --- */
+/* --- Page theme banner (task 5.1) - 欢迎区域更酷炫 --- */
+@keyframes site-theme-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes site-theme-glow {
+  0%, 100% { box-shadow: 0 12px 40px rgba(37, 99, 235, 0.4), 0 0 20px rgba(99, 102, 241, 0.2), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+  50% { box-shadow: 0 12px 48px rgba(37, 99, 235, 0.5), 0 0 28px rgba(99, 102, 241, 0.35), 0 0 0 1px rgba(255,255,255,0.15) inset; }
+}
 .site-theme {
-  margin: 0 0 1.2rem;
-  padding: 1.1rem 1.4rem;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 50%, #7c3aed 100%);
+  position: relative;
+  margin: 0 0 1.5rem;
+  padding: 0.875rem 5rem;
+  min-height: 3.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 20%, #2563eb 45%, #6366f1 70%, #7c3aed 100%);
+  background-size: 200% 200%;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  font-size: clamp(1.7rem, 2.1vw, 2.15rem);
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.22;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  box-shadow: var(--shadow-lg), 0 8px 32px rgba(37, 99, 235, 0.35);
+  letter-spacing: 0.05em;
+  line-height: 1.35;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.4), 0 0 20px rgba(99, 102, 241, 0.2), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  animation: site-theme-gradient 8s ease infinite, site-theme-glow 3s ease-in-out infinite;
   text-align: center;
   text-wrap: balance;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.site-theme::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+  pointer-events: none;
 }
 
 /* --- Buttons (task 3.1) --- */
@@ -272,6 +298,40 @@ h2 { font-size: 1.15rem; font-weight: 600; margin-top: var(--space-lg); margin-b
   border-radius: var(--radius);
   font-size: 0.9rem;
   color: var(--color-text-muted);
+}
+
+/* --- Back / nav link (e.g. 返回需求列表) --- */
+.design-nav { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.link-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: color var(--motion-duration), background var(--motion-duration), border-color var(--motion-duration), box-shadow var(--motion-duration), transform var(--motion-duration);
+}
+.link-back::before {
+  content: "←";
+  font-size: 0.95em;
+  opacity: 0.9;
+}
+.link-back:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+.link-back:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 /* Staged progress bar (per-task pipeline step) */
