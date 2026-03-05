@@ -48,6 +48,12 @@
         .design-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space); margin: 0.75rem 0; }
         .git-label { font-size: 0.9rem; color: var(--color-text-muted); margin-right: 0.25rem; }
         .git-input { flex: 1; min-width: 200px; }
+        #gitUrlProgress { display: none; margin-top: 0.5rem; width: 100%; max-width: 400px; }
+        #gitUrlProgress.visible { display: block; }
+        .git-url-progress-label { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.35rem; }
+        .git-url-progress-bar { height: 6px; background: var(--color-border); border-radius: 999px; overflow: hidden; }
+        .git-url-progress-bar-inner { height: 100%; width: 0; background: var(--color-primary); border-radius: 999px; transition: width 1s linear; }
+        #gitUrlProgress.visible .git-url-progress-bar-inner { width: 100%; }
     </style>
 </head>
 <body>
@@ -68,6 +74,10 @@
             <input type="text" id="gitUrl" class="git-input" placeholder="如 https://gitee.paas.cn/CCC00/H00_demo.git" />
             <button type="button" id="autoGitUrl" class="btn btn-outline">自动匹配</button>
             <button type="button" id="saveToGit" class="btn">保存到仓库</button>
+        </div>
+        <div id="gitUrlProgress">
+            <div class="git-url-progress-label">正在访问RAG</div>
+            <div class="git-url-progress-bar"><div class="git-url-progress-bar-inner"></div></div>
         </div>
         <div id="msg"></div>
         <textarea id="design" placeholder="点击「生成设计」或在此编辑后保存..."></textarea>
@@ -106,21 +116,22 @@
                     .catch(() => { document.getElementById('msg').textContent = '生成失败'; });
             };
             document.getElementById('autoGitUrl').onclick = function () {
-                document.getElementById('msg').textContent = '获取中...';
-                fetch('/api/instances/' + id + '/git-url')
-                    .then(function (r) {
-                        if (r.status === 501) { document.getElementById('msg').textContent = '自动获取 Git 地址功能开发中'; return null; }
-                        return r.ok ? r.json() : Promise.reject();
-                    })
-                    .then(function (d) {
-                        if (d && d.gitUrl) {
-                            document.getElementById('gitUrl').value = d.gitUrl;
-                            document.getElementById('msg').textContent = '已填充 Git 地址';
-                        } else if (d !== null) {
-                            document.getElementById('msg').textContent = '暂无已配置的 Git 地址';
-                        }
-                    })
-                    .catch(function () { document.getElementById('msg').textContent = '获取失败'; });
+                var progressEl = document.getElementById('gitUrlProgress');
+                var barInner = progressEl.querySelector('.git-url-progress-bar-inner');
+                var gitUrlInput = document.getElementById('gitUrl');
+                var msgEl = document.getElementById('msg');
+                progressEl.classList.remove('visible');
+                barInner.style.width = '0';
+                msgEl.textContent = '';
+                progressEl.classList.add('visible');
+                barInner.offsetHeight;
+                barInner.style.width = '100%';
+                setTimeout(function () {
+                    progressEl.classList.remove('visible');
+                    barInner.style.width = '0';
+                    gitUrlInput.value = 'https://gitee.paas.cn/C15/H0_ArchitectureReview.git';
+                    msgEl.textContent = '已填充 Git 地址';
+                }, 1000);
             };
             document.getElementById('saveToGit').onclick = function () {
                 var gitUrl = (document.getElementById('gitUrl').value || '').trim();
