@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { Document, Packer, Paragraph } from 'docx';
+import mammoth from 'mammoth/mammoth.browser';
 
 const stages = [
   { title: '需求阶段', icon: '▤', action: '需求分析', active: true, note: '专家分析优化中' },
@@ -303,6 +305,150 @@ function HomePage(props) {
 }
 
 function WorkspacePage() {
+  const fileInputRef = useRef(null);
+  const [promptText, setPromptText] = useState('');
+  const [documentName, setDocumentName] = useState('');
+  const [documentContent, setDocumentContent] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  function normalizeText(text) {
+    return text
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function readPlainText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        resolve(normalizeText(String(reader.result || '')));
+      };
+      reader.onerror = reject;
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  function handleUnsupportedDoc(file) {
+    setDocumentName(file.name);
+    setDocumentContent('');
+    setUploadStatus('当前浏览器预览仅支持 .docx / .txt / .md，老式 .doc 请先另存为 .docx 后再上传。');
+    setSaveStatus('');
+  }
+
+  function handleFile(file) {
+    if (!file) {
+      return;
+    }
+
+    var lowerName = file.name.toLowerCase();
+    setUploadStatus('正在解析文档...');
+    setDocumentName(file.name);
+    setSaveStatus('');
+
+    if (lowerName.endsWith('.docx')) {
+      file.arrayBuffer().then(function (arrayBuffer) {
+        return mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+      }).then(function (result) {
+        var text = normalizeText(result.value || '');
+        setDocumentContent(text);
+        setPromptText(text);
+        setUploadStatus(text ? '文档解析完成，已同步到输入框。' : '文档已上传，但未解析到可显示的文本内容。');
+      }).catch(function () {
+        setDocumentContent('');
+        setUploadStatus('文档解析失败，请检查文件是否损坏，或稍后重试。');
+      });
+      return;
+    }
+
+    if (lowerName.endsWith('.txt') || lowerName.endsWith('.md')) {
+      readPlainText(file).then(function (text) {
+        setDocumentContent(text);
+        setPromptText(text);
+        setUploadStatus(text ? '文档读取完成，已同步到输入框。' : '文件已上传，但内容为空。');
+      }).catch(function () {
+        setDocumentContent('');
+        setUploadStatus('文本文件读取失败，请稍后重试。');
+      });
+      return;
+    }
+
+    if (lowerName.endsWith('.doc')) {
+      handleUnsupportedDoc(file);
+      return;
+    }
+
+    setDocumentContent('');
+    setUploadStatus('仅支持上传 .docx、.doc、.txt、.md 文件。');
+  }
+
+  function getExportFileName(name) {
+    var baseName = name ? name.replace(/\.[^.]+$/, '') : '文档预览';
+    return baseName + '-已编辑.docx';
+  }
+
+  function downloadBlob(blob, fileName) {
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  function saveEditedDocument() {
+    if (!documentContent.trim()) {
+      setSaveStatus('当前没有可保存的文档内容。');
+      return;
+    }
+
+    var paragraphs = documentContent.split('\n').map(function (line) {
+      return new Paragraph({
+        text: line,
+        spacing: {
+          after: 120
+        }
+      });
+    });
+
+    var doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: paragraphs
+        }
+      ]
+    });
+
+    Packer.toBlob(doc).then(function (blob) {
+      downloadBlob(blob, getExportFileName(documentName));
+      setSaveStatus('文档已保存到本地下载目录。');
+    }).catch(function () {
+      setSaveStatus('文档保存失败，请稍后重试。');
+    });
+  }
+
+  function onFileChange(event) {
+    handleFile(event.target.files && event.target.files[0]);
+    event.target.value = '';
+  }
+
+  function openFilePicker() {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    setIsDragOver(false);
+    handleFile(event.dataTransfer.files && event.dataTransfer.files[0]);
+  }
+
   return (
     <main className="workspace">
       <section className="query-panel">
@@ -365,14 +511,79 @@ function WorkspacePage() {
                 HELLO！我是你的 AI 研发助手。今天有什么可以帮你的？你可以直接描述需求，或者上传 Word/SDD 文档让我进行解析。
               </div>
               <div className="composer">
-                <textarea readOnly value="描述您的功能需求或输入指令..." />
+                <textarea
+                  placeholder="描述您的功能需求或输入指令..."
+                  value={promptText}
+                  onChange={function (event) { setPromptText(event.target.value); }}
+                />
                 <button className="send-button" type="button">发送 ▷</button>
               </div>
-              <div className="upload-drop">
+              <input
+                ref={fileInputRef}
+                className="hidden-file-input"
+                type="file"
+                accept=".doc,.docx,.txt,.md"
+                onChange={onFileChange}
+              />
+              <div
+                className={'upload-drop' + (isDragOver ? ' drag-over' : '')}
+                onClick={openFilePicker}
+                onDragOver={function (event) {
+                  event.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={function () {
+                  setIsDragOver(false);
+                }}
+                onDrop={handleDrop}
+                role="button"
+                tabIndex={0}
+                onKeyDown={function (event) {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openFilePicker();
+                  }
+                }}
+              >
                 <div className="upload-cloud">☁</div>
                 <div className="upload-title">点击或拖拽文件上传</div>
-                <div className="upload-subtitle">支持 Word (.docx), SDD 文档</div>
+                <div className="upload-subtitle">支持 Word (.docx)、.doc、TXT、MD 文档</div>
+                {uploadStatus ? <div className="upload-status">{uploadStatus}</div> : null}
               </div>
+              {documentName ? (
+                <div className="document-preview-card">
+                  <div className="document-preview-head">
+                    <div>
+                      <div className="document-preview-label">已上传文档</div>
+                      <div className="document-preview-name">{documentName}</div>
+                    </div>
+                    <div className="document-preview-actions">
+                      <button className="ghost-button preview-action" type="button" onClick={openFilePicker}>
+                        重新上传
+                      </button>
+                      <button className="primary-button preview-save-action" type="button" onClick={saveEditedDocument}>
+                        保存文档
+                      </button>
+                    </div>
+                  </div>
+                  <div className="document-preview-body">
+                    {documentContent ? (
+                      <textarea
+                        className="document-preview-editor"
+                        value={documentContent}
+                        onChange={function (event) {
+                          setDocumentContent(event.target.value);
+                          setPromptText(event.target.value);
+                          setSaveStatus('文档内容已修改，可点击“保存文档”导出。');
+                        }}
+                      />
+                    ) : (
+                      <div className="document-preview-empty">当前没有可预览的文档内容。</div>
+                    )}
+                  </div>
+                  {saveStatus ? <div className="document-preview-status">{saveStatus}</div> : null}
+                </div>
+              ) : null}
             </div>
           </div>
 
